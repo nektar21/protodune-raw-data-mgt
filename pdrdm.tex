@@ -2,15 +2,18 @@
 \usepackage[margin=0.75in]{geometry}
 \usepackage{verbatim}
 \usepackage{graphicx}
+\usepackage{cite}
 \usepackage[pdftex,pdfpagelabels,bookmarks,hyperindex,hyperfigures]{hyperref}
+
+\bibliographystyle{unsrt}
 
 \newcommand{\fixme}[1]{\textbf{FIXME: #1}}    
 
 
 \title{Required System Development for protoDUNE Raw Data Mangement\\
-(NOTE: draft proposed requirements, v0.2)}
+(NOTE: draft proposed requirements, v0.3)}
 \date{\today}
-\author{M. Potehkin and B. Viren}
+\author{M. Potekhin and B. Viren}
 
 \begin{document}
 \maketitle
@@ -80,9 +83,7 @@ to be identical in terms of hardware characteristics or its software
 because the two DAQs differ.  Their individual characteristics are:
 
 \begin{description}
-\item[DP buffer farm] requires \fixme{XXX} TB distributed on
-  \fixme{XXX} computer nodes with \fixme{XXX} bandwidth.  It is
-  provided by \fixme{CERN(?)}.
+\item[DP buffer farm] configured with 1.4PB disk in 15 servers holding 16 disks each and 2x10GBE.~\cite{marteau}
 \item[SP buffer farm] requires \fixme{XXX} TB distributed over
   \fixme{XXX} nodes with \fixme{XXX} bandwidth.  It is provided by
   \fixme{DUNE(?)}.
@@ -282,6 +283,10 @@ design and it is expected that this document will be updated as the
 design matures.  The design still needs to be presented to experts in
 both SP and DP online, CERN and FNAL management and larger DUNE
 collaboration.
+
+
+\section{References}
+\bibliography{citedb}
 
 
 \end{document}

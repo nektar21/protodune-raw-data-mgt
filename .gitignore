@@ -8,3 +8,5 @@ auto
 *.toc
 pdrdm.pdf
 *.fdb_latexmk
+*.bbl
+*.blg
