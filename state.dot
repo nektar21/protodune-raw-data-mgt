@@ -1,0 +1,10 @@
+digraph state {
+	label="Example file state machine for EOS Transfer Agent";
+	
+	""->opened[label=" DAQ opens file"];
+	opened->closed[label=" DAQ closes file"];
+	closed->transfer[label=" ETA begins transfer"];
+	transfer->copied[label=" Transfer to EOS complete"];
+
+	
+}

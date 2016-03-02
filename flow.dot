@@ -1,0 +1,99 @@
+digraph pdrdm {
+        newrank=true;
+        label="protoDUNE raw data management systems";
+
+        subgraph cluster_CERN {
+                label="Tier 0 at CERN";
+ 
+               subgraph cluster_DP {
+                       label="NP02 (Dual Phase)";
+		       node [label="Dual Phase LArTPC",shape=house] dpdet;
+                       node [label="DP DAQ",shape=box] dpdaq;
+		       subgraph cluster_DPBUF {
+			       label="DP Buffer Farm\n(CERN hardware?)";
+			       node [label="DP BeeGFS",shape=diamond] dpdaqio;
+			       node [label="DP Buffer\nFarm Disks",shape=Mcircle] dpbd;
+			       node [label="EOS Transfer Agent", shape=diamond, color=red] dpingest;
+			       node [label="Purge Agent", shape=diamond, color=red] dppurge;
+		       }
+		}
+               subgraph cluster_SP {
+                       label="NP04 (Single Phase)";
+		       node [label="Single Phase LArTPC",shape=house] spdet;
+                       node [label="SP DAQ",shape=box] spdaq;
+
+		       subgraph cluster_SPBUF {
+			       label="SP Buffer Farm\n(DUNE hardware?)";
+			       node [label="SP BF Transfer",shape=diamond, color=red] spdaqio;
+			       node [label="SP Buffer\nFarm Disks",shape=Mcircle, color=red] spbd;
+			       node [label="EOS Transfer Agent", shape=diamond, color=red] spingest;
+			       node [label="Purge Agent", shape=diamond, color=red] sppurge;
+		       }
+	       }
+
+
+	       subgraph cluster_RDM {
+		       label="Raw Data Management Database System\n(CERN hardware?)";
+		       
+		       node [label="Agent Interface\n(web service)",shape=diamond,color=red] rdmai;
+		       node [label="Database server\n(CERN?)",shape=box,color=black] rdmdbs;
+
+	       }
+
+
+	       node [label="EOS Disk\n(CERN)", shape=Mcircle] eos;
+	       node [label="CASTOR Tape\ncustodial copy\n(CERN)", shape=Msquare] castor;
+	       node [label="CASTOR Transfer Agent", shape=diamond, color=red] castoragent;
+	       node [label="FNAL Transfer Agent", shape=diamond, color=red] fnalxferagent;
+	       node [label="Monitoring\n(web application)",shape=diamond,color=red] rdmmon;
+	       node [label="Express lane\njob submittion",shape=diamond,color=red] express;
+       }
+
+
+        subgraph cluster_FNAL {
+                label="Tier 1 at FNAL";
+		node [label="FNAL Transfer Server\n(technology?)",shape=box] fnalingest;
+		node [label="Drop box",shape=box] fnaldrop;
+		node [label="SAM",shape=box] sam;
+		node [label="Enstore Tape\nprimary copy\n(FNAL)",shape=Msquare] fnaltape;
+	}		
+
+       spdet->spdaq;
+       spdaq->spdaqio;
+       spdaqio->spbd;
+       spbd->spingest;
+       spbd->sppurge[dir=back];
+
+
+       dpdet->dpdaq;
+       dpdaq->dpdaqio;
+       dpdaqio->dpbd;
+       dpbd->dpingest;
+       dpbd->dppurge[dir=back];
+
+       spingest->eos[weight=1];
+       dpingest->eos[weight=1];
+
+       spingest->rdmai[style=dotted];
+       dpingest->rdmai[style=dotted];
+       sppurge->rdmai[style=dotted];
+       dppurge->rdmai[style=dotted];
+       
+       rdmdbs->rdmai[dir=both,style=dashed];
+       rdmmon->rdmai[dir=back,style=dotted];
+       express->rdmai[dir=both,style=dotted];
+       express->rdmmon[style=invis];
+       
+       eos->castoragent[weight=0];
+       castoragent->castor;
+       castoragent->rdmai[dir=both,style=dotted];
+
+       fnalxferagent->castoragent[style=invis];
+       
+       eos->fnalxferagent[weight=0];
+       fnalxferagent->rdmai[dir=both,style=dotted];
+       fnalxferagent->fnalingest->fnaldrop;
+       fnaldrop->sam;
+       fnaldrop->fnaltape;
+       
+}

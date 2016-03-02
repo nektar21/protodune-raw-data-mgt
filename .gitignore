@@ -1,0 +1,10 @@
+auto
+*~
+*.png
+*.aux
+*.fls
+*.log
+*.out
+*.toc
+pdrdm.pdf
+*.fdb_latexmk
