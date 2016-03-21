@@ -7,67 +7,35 @@
 \newcommand{\fixme}[1]{\textbf{FIXME: #1}}    
 
 
-\title{Required System Development for protoDUNE Raw Data Mangement\\
-(NOTE: draft proposed requirements, v0.2)}
+\title{Design of the Data Management System for protoDUNE}
 \date{\today}
-\author{M. Potehkin and B. Viren}
+\author{O. Gutsche, R. Illingworth, M. Mengel, A. Norman, M. Potekhin and B. Viren}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-  The protoDUNE detectors (dual-phase NA02 and single-phase NA04)
-  require a number of systems in order to marshal raw data from
-  their respective DAQ to prompt processing and mass storage.  This
-  document provides an enumeration and high-level description of these
-  systems.
+The protoDUNE detectors (dual-phase NA02 and single-phase NA04)
+require a number of systems in order to marshal raw data from
+their respective DAQ to prompt processing and mass storage.  This
+document aims to  describe the general parameters of the problem, summarize the requirements
+and explore a solution which involves leveraging F-FTS.
 \end{abstract}
 
 \tableofcontents
 
 \pagebreak
 
-\section{Scope and Overview}
+\section{Overview}
+\input{protoDUNE-overview}
 
-This document provides requirements for a protoDUNE Raw Data
-Management (RDM) system.  The system will receive the raw data from
-its two sources of the DAQs for the NP02 Dual-Phase (DP) and NP04
-Single-Phase (SP) DUNE prototype detectors.  It will provide support
-for prompt (``express lane'') processing.  It will marshal the data to
-offline disk and custodial archive storage at CERN and transfer a copy
-to Fermilab.  
+%\begin{figure}[h]
+%  \centering
+%  \includegraphics[width=0.8\textwidth]{flow.pdf}
+%  \caption{Systems required for protoDUNE raw data management. }
+%  \label{fig:flow}
+%\end{figure}
 
-Figure~\ref{fig:flow} shows an overview of the expected systems that
-will be required.  The major hardware systems are:
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.8\textwidth]{flow.pdf}
-  \caption{Systems required for protoDUNE raw data management.  Red indicates systems where new development is needed.  Lined circles indicate disk and lined boxes indicate tape storage hardware systems.  Diamonds indicate software systems.  Solid arrows indicate flow of detector data, dotted arrows indicate flow of metadata and dashed indicates database queries.}
-  \label{fig:flow}
-\end{figure}
-
-
-\begin{description}
-\item[Buffer Farms] each detector is expected to have a nearby and
-  dedicated disk buffer farm
-\item[RDM Server] hardware to run the RDM database and its Agent Interface.
-\item[EOS \& CASTOR] CERN's disk and tape systems
-\item[Enstore] FNAL's tape system
-
-\end{description}
-
-\noindent The major software systems are:
-
-\begin{description}
-\item[PDRDM] The protoDUNE Raw Data Management system is a central
-  catalog for holding the state of all raw data files.
-\item[agents] Various programs responsible for performing some action
-  on a set of raw data files, potentially based on the state of the
-  PDRDM and recording the outcome to the PDRDM system.
-\end{description}
-
-\noindent Details of these systems are given in the following sections.
 
 \section{Hardware Systems}
 
