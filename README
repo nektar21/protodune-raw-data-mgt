@@ -1,4 +1,11 @@
-This is a document for a proposed raw data managment system for the
-protodune detectors (SP and DP).  It's currently a work in progress
+This is repository contains documents for a proposed raw data managment system for the protoDUNE detectors:
+* NP02 - the dual-phase detector
+* NP04 - the single-phase detector
+
+ (SP and DP).  It's currently a work in progress
 and needs input from the various primaries.
+
+The file pdrdm.tex and the two charts that go in it,
+"flow" and "state", is an initial note evaluating basic design requirements.
+
 
