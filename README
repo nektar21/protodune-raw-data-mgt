@@ -2,10 +2,9 @@ This is repository contains documents for a proposed raw data managment system f
 * NP02 - the dual-phase detector
 * NP04 - the single-phase detector
 
- (SP and DP).  It's currently a work in progress
-and needs input from the various primaries.
-
 The file pdrdm.tex and the two charts that go in it,
 "flow" and "state", is an initial note evaluating basic design requirements.
+
+The file protoDUNE-DMS-design.tex describes a specific approach to the design of the data management system based on deployment and reuse of F-FTS, which is a data management system supported by FNAL.
 
 
