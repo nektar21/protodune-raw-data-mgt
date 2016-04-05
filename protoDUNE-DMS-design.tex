@@ -142,16 +142,25 @@ the system will initiate the file registration and transfer operations.
 %%%%%%%%%%%%%%%%%%%%%%%%
 In the \pd model, the primary F-FTS will initiate a copy operation from the online disk buffer farms into the EOS storage system.  The system will use the 3rd party copy support that is provided by the XROOTD protocol to allow for optimized transfers into EOS.  Upon completion of the initial copy into EOS, the F-FTS will initiate a “chained” copy (a copy that is dependent on the initial copy into EOS) of the data from EOS to the Castor archive system.  The F-FTS system will register each file’s metadata records (containing both basic and physics metadata, defined below)  in the SAM data handling system.  Upon completion of the replication of the data to Castor, the F-FTS will enter a monitoring/polling state of its operations to determine when the file has been successfully written to the archival media.
 
+\subsection{Deletion and Cleanup}
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[tbh]
 \centering\includegraphics[width=0.5\linewidth]{fts_file_deletion_flowchart.png}
-\caption{\label{fig:ftscleanup}\pd F-FTS File deletion logic and cleanup Flowchart.  The F-FTS performs a configurable multi-stage validation procedure to determine if files are eligible for deletion/cleanup from the input area.  In particular the system can verify the archival status of files (ensuring they have been written to tape and that tape has been closed/unloaded properly) prior to performing any file deletion. }
+\caption{\label{fig:ftscleanup}Flowchart of the \pd file deletion and cleanup.}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%
-The primary F-FTS will handle the “cleanup” of its input dropbox.  The F-FTS performs configurable periodic cleanup passes through its current file sets.  The baseline cleanup logic is shown in Fig. 
-\ref{fig:ftscleanup}. 
-This cleanup process ensures that all files are successfully transferred and archived before they are deleted and provides an “age” criterion on files so that files can be retained within the DAQ environment for a period of time.  This allows operations like online/nearline processing or log files to be examined within the DAQ environment after the actual transfers to archival storage have completed.
+The primary F-FTS will handle the “cleanup” of its input dropbox. 
+The F-FTS performs configurable periodic cleanup passes through its current file sets.  Basic logic of the cleanup process is shown in Fig.\ref{fig:ftscleanup}. 
+The F-FTS performs a configurable multi-stage validation procedure to determine if files are eligible for deletion/cleanup from the input area.
+In particular the system can verify the archival status of files (ensuring they have been written to tape and that tape has been closed/unloaded properly)
+prior to performing any file deletion.
+
+The system may also provide an ``age'' criterion on files so that files can be retained within the DAQ environment for a specific period of time.
+This allows operations like online/nearline processing or log files to be examined within the DAQ environment after the actual transfers to archival
+storage have completed.
+
+
 
 \subsection{Secondary FTS}
 The secondary F-FTS service runs outside of the detector DAQ domains, but within the CERN computing sphere for maximum efficiency.
@@ -161,6 +170,10 @@ This F-FTS system will initiate the copy request between the European availabili
 this service will be the FNAL-based dCache/Enstore system, where a second archival copy of the data will be recorded.  Additional copies across the availability zones can be
 configured based on available resources and available transatlantic bandwidth (e.g. direct transfer from CERN to BNL’s dCache or to PNNL’s storage facilities). 
 To perform the transfers, the F-FTS will interface with the WLCG-FTS (as a supported transfer protocol) to schedule the actual transfer between the storage elements.  
+
+
+
+\subsection{Data Catalog}
 Underlying the F-FTS systems will be a fully featured data management layer (SAM) which will provide the metadata and replica catalogs.
 All data being handled by the transfer systems will have corresponding records in the data handling catalog so that the content,
 locations and provenance of the data can be fully tracked.  The primary catalog systems will reside at FNAL with proxy/cache
@@ -168,6 +181,7 @@ layers in the European and North American zones to ensure high speed connections
 clients that will query the catalogs from these zones.  Similar scalable proxy and cache layers can be instantiated for other identified
 zones which may require high speed or optimized access to the catalog systems.
  
+\subsection{Replication}
 Replication between collaborating peer institutions in the same geographic zone  (i.e. national labs and large universities with significant computing/storage resources in the North American zone) will be provided through standard “dataset” replication tools that are a part of the SAM data handling suite.  Data access at smaller university sites or opportunistic computing resources (e.g. Open Science Grid (OSG) affiliated sites) is provided and optimized through support for streaming protocols such as XROOTD with redirector services and through cache layers such as the “stash cache” system employed by OSG.  
 
 \section{Technical Requirements and Specifications}
