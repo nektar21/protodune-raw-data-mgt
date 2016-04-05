@@ -182,18 +182,31 @@ clients that will query the catalogs from these zones.  Similar scalable proxy a
 zones which may require high speed or optimized access to the catalog systems.
  
 \subsection{Replication}
-Replication between collaborating peer institutions in the same geographic zone  (i.e. national labs and large universities with significant computing/storage resources in the North American zone) will be provided through standard “dataset” replication tools that are a part of the SAM data handling suite.  Data access at smaller university sites or opportunistic computing resources (e.g. Open Science Grid (OSG) affiliated sites) is provided and optimized through support for streaming protocols such as XROOTD with redirector services and through cache layers such as the “stash cache” system employed by OSG.  
+Replication between collaborating peer institutions in the same geographic zone  (e.g. national laboratories and large universities with significant
+computing/storage resources in the North American zone) will be provided through standard ``dataset'' replication tools that are a part
+of the SAM data handling suite.
+
+Data access at smaller university sites or opportunistic computing resources (e.g. Open Science Grid (OSG)
+affiliated sites) is provided and optimized through support for streaming protocols such as XROOTD with redirector
+services and through cache layers such as the “stash cache” system employed by OSG.  
 
 \section{Technical Requirements and Specifications}
 
-%The data management and transfer systems requirements are enumerated in table XX according to the category to which they belong.
+\subsection{Outage and Backlog Considerations}
+\label{sec:backlog}
+CERN policies require that an experiment is capable of storing data locally (in the vicinity of the apparatus as opposed to CERN Central
+Storage)  for a nominal period of 3 days, to ensure that the experiment can run for a period of time even in case of network interruptions
+and storage facility outages. In an outage scenario the data preserved locally must still be committed to mass storage when a service is restored.
+This creates a backlog situation which roughly doubles the requirements on the sustained rate of file registration and other transactions, buffer
+areas and certain other parameters of the overall system.
+
 
 \subsection{Data Throughput}
 
 The goal of the data handling system is to be performant at a level that allows for full exploitation of the underlying hardware and networking infrastructure
 upon which  it is running.  In the case of the proto-Dune experiment the FTS system will be capable of operating at a sustained data processing and transfer
 rate that is greater than 80\% of the maximum theoretical bandwidth available between the primary DAQ storage systems and the EOS file storage system.
- In the current design this network bandwidth consists of two 20 Gb/s ethernet links.  The RAID arrays or distributed file system architectures to which the
+ In the current design this network bandwidth consists of two 20\,Gb/s ethernet links.  The RAID arrays or distributed file system architectures to which the
 data will be written to and read from are assumed to have similar or lower available bandwidth.  The actual observed read/write bandwidth will be determined
 by the actual choice of hardware that is deployed to the detectors.  The primary DAQ FTS system will be required to operate at a sustained effective bandwidth
 of the lesser of: two times 16\,Gb/s (80\% of theoretical network bandwidth) or 80\% of the measured read access bandwidth from the storage arrays
@@ -209,25 +222,61 @@ and an aggregated rate of 100,000 file registration operations per day.  This le
 in other online and offline systems where the data handling system has been deployed.
 
 \subsection{Transaction Tracking}
-The goal of the online components of the data handling system are to be able to perform simultaneous end-to-end tracking of all files that are undergoing active transport through the system prior to being written/verified in the archival storage systems, without impacting or interrupting data taking.  To achieve this goal the online data handling systems for proto-DUNE will be able to support a total number of “in flight” files (per FTS instance) equal to the 100,000 times the maximum supported duration (in days) of an outage that can be sustained by the DAQ system under outages in the network or storage systems downstream of the DAQ domain.
-In the case of proto-DUNE the FTS systems will support at least 700,000 “in flight” files at any given time, where at least 10,000 of these files are undergoing “active” registration/transport through the system at any given time (meaning at least 10k of the files are being actively managed while the remainder are “waiting” in the designated dropbox location.
+The goal of the online components of the data handling system are to be able to perform simultaneous end-to-end tracking
+of all files that are undergoing active transport through the system prior to being written/verified in the archival storage systems,
+without impacting or interrupting data taking.  To achieve this goal the online data handling systems for \pd will be
+able to support a total number of “in flight” files (per FTS instance) equal to the 100,000 times the maximum supported duration (in days)
+of an outage that can be sustained by the DAQ system under outages in the network or storage systems downstream of the DAQ domain.
+Due to backlog considerations (see \ref{sec:backlog}) the FTS systems will support at least 700,000 “in flight” files at any given time, where at least 10,000 of these
+files are undergoing “active” registration/transport through the system at any given time (meaning at least 10k of the files are being actively
+managed while the remainder are “waiting” in the designated dropbox location.
 
 \subsection{Transfer Latency}
-The file transfer and management systems are designed to operate in an asynchronous manner to other components of the proto-DUNE DAQ.  Due to the polling models employed in this asynchronous model, many operations do not have fixed temporal relations to other events in the DAQ system, but rather will occur/complete within a well defined time window or with a certain latency.  In the case of the proto-DUNE experiment, the data management systems will be capable of operating within the following parameters
+The file transfer and management systems are designed to operate in an asynchronous manner to other components of the proto-DUNE DAQ. 
+Due to the polling models employed in this asynchronous model, many operations do not have fixed temporal relations to other events in the DAQ system,
+but rather will occur/complete within a well defined time window or with a certain latency.  In the case of the proto-DUNE experiment,
+the data management systems will be capable of operating within the following parameters
 
-In the first stage of the file transfers, the latency between the completion of the DAQ writing a file and the hand off/detection of the file by the FTS system will be controlled by a configurable delay parameter (in minutes) within the FTS which controls the intervals at which the FTS looks for “new” files in its dropbox locations.  Under normal (steady state) operation, the average latency will be 1-2 polling intervals.  The actual latency between when the DAQ finishes writing a given file and when the FTS picks up and begins to actively manage that file can be delayed by the number of other new or pending file currently in the system.  In this case the order of handling of files will be handled via an internal queuing algorithm that efficiently handles the files but does provide any user specified prioritization.
+In the first stage of the file transfers, the latency between the completion of the DAQ writing a file and the hand-off/detection of the file by the
+FTS system will be controlled by a configurable delay parameter (in minutes) within the FTS which controls the intervals at which the FTS looks for
+``new'' files in its dropbox locations.  Under normal (steady state) operation, the average latency will be 1-2 polling intervals.
+The actual latency between when the DAQ finishes writing a given file and when the FTS picks up and begins to actively manage
+that file can be delayed by the number of other new or pending file currently in the system.  In this case the order of handling of
+files will be handled via an internal queuing algorithm that efficiently handles the files but does provide any user specified prioritization.
 
-In the second stage of file transfers, the latency between when a file is generated by the DAQ and when it is transferred to the EOS system and then written/verified to archival media (via Castor) is dependent on first stage latencies (new file detection and file registration) and then the details of the archival storage system and its characteristics.  In particular the DAQ to EOS to Castor path will constitute a set of chained dependencies with an independent polling interval for each stage.  Under normal operating conditions that latency for the file to be transferred to EOS and be available through the data handling system is expected to be 1-2 of these polling cycles, contingent on write congestion in the EOS storage system.   For full registration of the files in Castor and onto type, the FTS/SAM systems will support latencies in this recording of 3 hours to 30 days and will support a configurable timeout parameter to indicate failures in this transition.
+In the second stage of file transfers, the latency between when a file is generated by the DAQ and when it is transferred to the EOS
+system and then written/verified to archival media (via Castor) is dependent on first stage latencies (new file detection and file registration)
+and then the details of the archival storage system and its characteristics.  In particular the DAQ to EOS to CASTOR path will constitute a set
+of chained dependencies with an independent polling interval for each stage.  Under normal operating conditions that latency for the file to
+be transferred to EOS and be available through the data handling system is expected to be 1-2 of these polling cycles, contingent on write
+congestion in the EOS storage system.   For full registration of the files in Castor and onto type, the FTS/SAM systems will support latencies
+in this recording of 3 hours to 30 days and will support a configurable timeout parameter to indicate failures in this transition.
 
-The latency between when files are written by the DAQ and when the files are available on storage in the North American zone, will be determined by the second stage latency of the files appearing on the EOS system from the DAQ and then a secondary latency will be incurred based on the polling for files that require transatlantic endpoints.  Similar to the other stages this is configurable through a polling interval.  Once queued for handling the actual file transport will be off loaded to the WLCG FTS system which will schedule the files for transmission and will properly balance and throttle the site to site traffic and will properly conform to the CERN computing environment.  Latencies at this stage are well understood based on the experience that the LHC experiments have with WLCG FTS.  
+The latency between when files are written by the DAQ and when the files are available on storage in the North American zone,
+will be determined by the second stage latency of the files appearing on the EOS system from the DAQ and then a secondary latency
+will be incurred based on the polling for files that require transatlantic endpoints.  Similar to the other stages this is configurable
+through a polling interval.  Once queued for handling the actual file transport will be off loaded to the WLCG FTS system which will
+schedule the files for transmission and will properly balance and throttle the site to site traffic and will properly conform to the CER
+ computing environment.  Latencies at this stage are well understood based on the experience that the LHC experiments have with WLCG FTS.  
 
 \section{Storage System Interface Specifications}
-The module design of the data handling system provide considerable flexibility in its ability to adapt to different requirements for both data input and output storage systems.  For the proto-Dune experiment these major interface points are considered to be at the interface between the experiment’s core DAQ components and at the interfaces between the mass storage and archival storage systems at both CERN and FNAL.  The interface choices below detail these interfaces.
+\subsection{Overview}
+The module design of the data handling system provide considerable flexibility in its ability to adapt to different requirements
+for both data input and output storage systems.  For the \pd experiment these major interface points are considered
+to be at the interface between the experiment’s core DAQ components and at the interfaces between the mass storage and
+archival storage systems at both CERN and FNAL.  The interface choices below detail these interfaces.
 
 \subsection{DAQ to Data Handling System Interface}
-The interface between the core DAQ system and the data handling system is made at the DAQ’s disk buffer farm.  When the final stage event builder have completed the assembly of a file, the file will be handed off to the data handling system by the DAQ by placing the file into a designated “dropbox” area on the target file system.  For POSIX compliant file systems, this can be accomplished through an atomic move operation (i.e. Unix “mv” equivalent) which minimizes the IO overhead associated with the hand off.  No signals need be emitted from the DAQ, nor will any other form of message be required in the direction of the DAQ to the data handling system.  The F-FTS will detect new files through files becoming visible in configured dropbox locations of the storage system (i.e. a new file appearing in a directory) 
+The interface between the core DAQ system and the data handling system is made at the DAQ’s disk buffer farm.
+When the final stage event builder have completed the assembly of a file, the file will be handed off to the data handling system
+by the DAQ by placing the file into a designated ``dropbox'' area on the target file system.  For POSIX compliant file systems,
+this can be accomplished through an atomic move operation (i.e. Unix \textit{mv} equivalent) which minimizes the I/O overhead associated
+with the hand off.  No signals need be emitted from the DAQ, nor will any other form of message be required in the direction of the
+DAQ to the data handling system.  The F-FTS will detect new files through files becoming visible in configured dropbox locations of
+the storage system (i.e. a new file appearing in a directory) 
 
-    The F-FTS systems running as part of the data handling system will use either a POSIX (or near POSIX) compliant file system view of the disk buffer farm, or an API that provides access to standard meta information regarding the storage system’s dropbox area (directory) and contents (i.e. filenames, file size, create/modify times etc…)  Additionally the FTS will require a file read API for the purpose of metadata extraction from the file and for checksum computations (if not provided through some other means).  The system will require a delete API and privilege, if the automated cleanup options are desired/enabled.  If the DAQ storage elements support “third party” transfer protocols, the FTS can use these to reduced overhead in performing the actual file transfer operations.
+The F-FTS systems running as part of the data handling system will use either a POSIX (or near POSIX) compliant file system view of the disk buffer farm,
+or an API that provides access to standard meta information regarding the storage system’s dropbox area (directory) and contents (i.e. filenames, file size, create/modify times etc…)  Additionally the FTS will require a file read API for the purpose of metadata extraction from the file and for checksum computations (if not provided through some other means).  The system will require a delete API and privilege, if the automated cleanup options are desired/enabled.  If the DAQ storage elements support “third party” transfer protocols, the FTS can use these to reduced overhead in performing the actual file transfer operations.
 
 The organization of the FTS dropbox area(s) will be configured to support the volume of data that would be generated during a sustained outage (of non-DAQ systems) of no less than 3 days plus the time required to register/process the volume of data that would be generated during the outage (i.e. “the recovery time” required to clear a backlog).
 
