@@ -121,8 +121,19 @@ File registrations                       & 200,000/day & \\
 \end{table}
 
 \section{System Topology}
+\subsection{FTS instances}
+The baseline design for the online data handling system is shown schematically in Fig.~\ref{fig:sys_topology}.  This design leverages the technology of the Fermilab
+File Transfer Service (F-FTS) running in two positions within the CERN computing environment, as two separate instances. They will be referred to as ``primary'' and
+``secondary''. This does not reflect on their prioritization or importance, but rather on their position in the data transmission chain.
 
-The baseline design for the online data handling system is shown schematically in Fig.~\ref{fig:sys_topology}.  This design leverages the technology of the Fermilab File Transfer Service (F-FTS) running in two positions within the CERN computing environment. The  primary F-FTS systems are homed within or straddling the border of each of the detector’s DAQ domains (one for single phase and one for dual phase readout detectors) and is configured to run on a system which is able to access the DAQ’s buffer disks either through a POSIX filesystem or a protocol layer (e.g. XROOTD, gridFTP or others).  The primary FTS system is configured on this system to look at one or more input directories or storage locations, commonly referred to as a “dropboxes”.  The FTS daemon performs periodic scans of the configured dropboxes.  The system will operate asynchronously and independently of the \pd DAQ systems.  When the \pd DAQ has produced a file that it wishes to have passed off to the storage system, it will “move” (perform a filesystem/storage system atomic move operation or the equivalent) the file to the dropbox location. When a new file is located within one of the dropboxes, the system will initiate the file registration and transfer operations.
+\subsection{Primary FTS}
+The  primary F-FTS systems are deployed within or straddling the border
+of each of the detector’s DAQ domains (one for single phase and one for dual phase readout detectors) and is configured to run on a system which is able to access
+the DAQ’s buffer disks either through a POSIX filesystem or a protocol layer (e.g. XROOTD, gridFTP or others).  The primary FTS system is configured on this system
+to look at one or more input directories or storage locations, commonly referred to as a “dropboxes”.  The FTS daemon performs periodic scans of the configured dropboxes.
+The system will operate asynchronously and independently of the \pd DAQ systems.  When the \pd DAQ has produced a file that it wishes to have passed off to the storage system,
+it will “move” (perform a filesystem/storage system atomic move operation or the equivalent) the file to the dropbox location. When a new file is located within one of the dropboxes,
+the system will initiate the file registration and transfer operations.
 %%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[tbh]
 \centering\includegraphics[width=0.99\linewidth]{protDune-datahandling-topology.png}
@@ -142,25 +153,50 @@ The primary F-FTS will handle the “cleanup” of its input dropbox.  The F-FTS
 \ref{fig:ftscleanup}. 
 This cleanup process ensures that all files are successfully transferred and archived before they are deleted and provides an “age” criterion on files so that files can be retained within the DAQ environment for a period of time.  This allows operations like online/nearline processing or log files to be examined within the DAQ environment after the actual transfers to archival storage have completed.
 
-The secondary F-FTS service runs outside of the detector DAQ domains, but within the CERN computing sphere for maximum efficiency.  This F-FTS system is configured to monitor, as its input dropboxes, the EOS locations that the primary DAQ F-FTS systems are using as output endpoints.  The system operates in the same manner as the primary F-FTS, scanning for new files and then initiating copy requests of the data to a set of one or more destination endpoints.  This F-FTS system will initiate the copy request between the European availability zone, and the North American availability zone.  At least one of the endpoint destinations for this service will be the FNAL-based dCache/Enstore system, where a second archival copy of the data will be recorded.  Additional copies across the availability zones can be configured based on available resources and available transatlantic bandwidth (e.g. direct transfer from CERN to BNL’s dCache or to PNNL’s storage facilities).  To perform the transfers, the F-FTS will interface with the WLCG-FTS (as a supported transfer protocol) to schedule the actual transfer between the storage elements.  
-Underlying the F-FTS systems will be a fully featured data management layer (SAM) which will provide the metadata and replica catalogs.  All data being handled by the transfer systems will have corresponding records in the data handling catalog so that the content, locations and provenance of the data can be fully tracked.  The primary catalog systems will reside at FNAL with proxy/cache layers in the European and North American zones to ensure high speed connections between the servers and the [offline analysis] clients that will query the catalogs from these zones.  Similar scalable proxy and cache layers can be instantiated for other identified zones which may require high speed or optimized access to the catalog systems.
+\subsection{Secondary FTS}
+The secondary F-FTS service runs outside of the detector DAQ domains, but within the CERN computing sphere for maximum efficiency.
+This F-FTS system is configured to monitor, as its input dropboxes, the EOS locations that the primary DAQ F-FTS systems are using as output endpoints.
+The system operates in the same manner as the primary F-FTS, scanning for new files and then initiating copy requests of the data to a set of one or more destination endpoints.
+This F-FTS system will initiate the copy request between the European availability zone, and the North American availability zone.  At least one of the endpoint destinations for
+this service will be the FNAL-based dCache/Enstore system, where a second archival copy of the data will be recorded.  Additional copies across the availability zones can be
+configured based on available resources and available transatlantic bandwidth (e.g. direct transfer from CERN to BNL’s dCache or to PNNL’s storage facilities). 
+To perform the transfers, the F-FTS will interface with the WLCG-FTS (as a supported transfer protocol) to schedule the actual transfer between the storage elements.  
+Underlying the F-FTS systems will be a fully featured data management layer (SAM) which will provide the metadata and replica catalogs.
+All data being handled by the transfer systems will have corresponding records in the data handling catalog so that the content,
+locations and provenance of the data can be fully tracked.  The primary catalog systems will reside at FNAL with proxy/cache
+layers in the European and North American zones to ensure high speed connections between the servers and the (offline analysis)
+clients that will query the catalogs from these zones.  Similar scalable proxy and cache layers can be instantiated for other identified
+zones which may require high speed or optimized access to the catalog systems.
  
 Replication between collaborating peer institutions in the same geographic zone  (i.e. national labs and large universities with significant computing/storage resources in the North American zone) will be provided through standard “dataset” replication tools that are a part of the SAM data handling suite.  Data access at smaller university sites or opportunistic computing resources (e.g. Open Science Grid (OSG) affiliated sites) is provided and optimized through support for streaming protocols such as XROOTD with redirector services and through cache layers such as the “stash cache” system employed by OSG.  
 
 \section{Technical Requirements and Specifications}
 
-The data management and transfer systems requirements are enumerated in table XX according to the category to which they belong.
+%The data management and transfer systems requirements are enumerated in table XX according to the category to which they belong.
 
 \subsection{Data Throughput}
 
-The goal of the data handling system is to be performant at a level that allows for full exploitation of the underlying hardware and networking infrastructure upon which  it is running.  In the case of the proto-Dune experiment the FTS system will be capable of operating at a sustained data processing and transfer rate that is greater than 80% of the maximum theoretical bandwidth available between the primary DAQ storage systems and the EOS file storage system.  In the current design this network bandwidth consists of two 20 Gb/s ethernet links.  The RAID arrays or distributed file system architectures to which the data will be written to and read from are assumed to have similar or lower available bandwidth.  The actual observed read/write bandwidth will be determined by the actual choice of hardware that is deployed to the detectors.  The primary DAQ FTS system will be required to operate at a sustained effective bandwidth of the lesser of: two times 16 Gb/s (80% of theoretic network bandwidth) or 80% of the measured read access bandwidth from the storage arrays [during simultaneous write operations, if the DAQ computing models requires this mixed access mode] under the standard proto-DUNE operations.
+The goal of the data handling system is to be performant at a level that allows for full exploitation of the underlying hardware and networking infrastructure
+upon which  it is running.  In the case of the proto-Dune experiment the FTS system will be capable of operating at a sustained data processing and transfer
+rate that is greater than 80\% of the maximum theoretical bandwidth available between the primary DAQ storage systems and the EOS file storage system.
+ In the current design this network bandwidth consists of two 20 Gb/s ethernet links.  The RAID arrays or distributed file system architectures to which the
+data will be written to and read from are assumed to have similar or lower available bandwidth.  The actual observed read/write bandwidth will be determined
+by the actual choice of hardware that is deployed to the detectors.  The primary DAQ FTS system will be required to operate at a sustained effective bandwidth
+of the lesser of: two times 16\,Gb/s (80\% of theoretical network bandwidth) or 80\% of the measured read access bandwidth from the storage arrays
+(during simultaneous write operations, if the DAQ computing models requires this mixed access mode) under the standard \pd operations.
 
 \subsection{Transaction Throughput}
 
-The goal of the data handling system is to be performant at a level that allows for full exploitation of the underlying data catalog and database infrastructure while at the same time meeting or exceeding the rate at which files or other data objects are generated by the proto-DUNE detectors.  In the case of the proto-DUNE experiment that FTS systems that run on the border of the DAQ domain will be able to support a minimum transaction rate of 3600 file registration per hour (1 Hz) and an aggregated rate of 100,000 file registration operations per day.  This level of performance has been demonstrated in other online and offline systems where the data handling system has been deployed.
+The goal of the data handling system is to be performant at a level that allows for full exploitation of the underlying data
+catalog and database infrastructure while at the same time meeting or exceeding the rate at which files or other data
+objects are generated by the proto-DUNE detectors.  In the case of the proto-DUNE experiment that FTS systems that run on
+the border of the DAQ domain will be able to support a minimum transaction rate of 3600 file registration per hour (1 Hz)
+and an aggregated rate of 100,000 file registration operations per day.  This level of performance has been demonstrated
+in other online and offline systems where the data handling system has been deployed.
 
 \subsection{Transaction Tracking}
-The goal of the online components of the data handling system are to be able to perform simultaneous end-to-end tracking of all files that are undergoing active transport through the system prior to being written/verified in the archival storage systems, without impacting or interrupting data taking.  To achieve this goal the online data handling systems for proto-DUNE will be able to support a total number of “in flight” files (per FTS instance) equal to the 100,000 times the maximum supported duration (in days) of an outage that can be sustained by the DAQ system under outages in the network or storage systems downstream of the DAQ domain.  In the case of proto-DUNE the FTS systems will support at least 700,000 “in flight” files at any given time, where at least 10,000 of these files are undergoing “active” registration/transport through the system at any given time (meaning at least 10k of the files are being actively managed while the remainder are “waiting” in the designated dropbox location.
+The goal of the online components of the data handling system are to be able to perform simultaneous end-to-end tracking of all files that are undergoing active transport through the system prior to being written/verified in the archival storage systems, without impacting or interrupting data taking.  To achieve this goal the online data handling systems for proto-DUNE will be able to support a total number of “in flight” files (per FTS instance) equal to the 100,000 times the maximum supported duration (in days) of an outage that can be sustained by the DAQ system under outages in the network or storage systems downstream of the DAQ domain.
+In the case of proto-DUNE the FTS systems will support at least 700,000 “in flight” files at any given time, where at least 10,000 of these files are undergoing “active” registration/transport through the system at any given time (meaning at least 10k of the files are being actively managed while the remainder are “waiting” in the designated dropbox location.
 
 \subsection{Transfer Latency}
 The file transfer and management systems are designed to operate in an asynchronous manner to other components of the proto-DUNE DAQ.  Due to the polling models employed in this asynchronous model, many operations do not have fixed temporal relations to other events in the DAQ system, but rather will occur/complete within a well defined time window or with a certain latency.  In the case of the proto-DUNE experiment, the data management systems will be capable of operating within the following parameters
