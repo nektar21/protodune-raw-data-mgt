@@ -16,6 +16,7 @@
 \date{\today}
 \author{M. Potekhin$^a$, B. Viren$^a$, S. Fuess$^b$, O. Gutsche$^b$, R. Illingworth$^b$,\\M. Mengel$^b$,
  A. Norman$^b$\\
+\ \\
 $^a$\textit{Brookhaven National Laboratory, Upton NY}\\
 $^b$\textit{Fermi National Accelerator Laboratory, Batavia IL}}
 
@@ -24,23 +25,41 @@ $^b$\textit{Fermi National Accelerator Laboratory, Batavia IL}}
 \maketitle
 
 \begin{abstract}
-
-The \pd experimental program is designed to test and validate the technologies and final designs that will be applied to the construction of the DUNE detector at the Sanford Underground Research Facility (SURF).  The \pd detectors will be run in a dedicated beam line at the CERN SPS accelerator complex. 
+The \pd experimental program is designed to test and validate the technologies and design that will be applied to the construction
+of the DUNE Far Detector at the Sanford Underground Research Facility (SURF).  The \pd detectors will be run in a dedicated beam line
+at the CERN SPS accelerator complex. 
 \end{abstract}
 
 %\linenumbers
 
 %% main text
-\section{\pd Program and Detectors}
+\section{The \pd Program and Detectors}
 \label{S:1}
 
-The \pd program will help validate various DUNE technology aspects before proceeding with the construction of the principal DUNE detectors at SURF. It is designed for measurements with a test beam provided by a dedicated target and beamline system at the CERN SPS accelerator complex. It also has the potential to be an important platform for realistic LArTPC detector characterization (e.g. PID, shower response, etc.) utilizing controlled conditions of a test-beam experimental setup. The name “\pd” currently applies to two full-scale LArTPC prototypes based on two different technologies. The “full-scale” designation is used to describe the fact that the prototypes contain important (and large) structural and readout elements built according to the specifications (including the size) of the eventual full detector.
+The \pd program will help validate various DUNE technology aspects before proceeding with the construction of the principal DUNE detectors at SURF.
+It is designed for measurements with a test beam provided by a dedicated target and beamline system at the CERN SPS accelerator complex.
+It also has the potential to be an important platform for realistic Liquid Argon Time Projection Chamber (LArTPC) detector characterization
+(e.g. PID, shower response, etc.) utilizing controlled conditions of a test-beam experimental setup. The name ``\pd'' currently applies to two
+full-scale LArTPC prototypes based on two different technologies --- single-phase and dual-phase TPCs.
+The ``full-scale'' designation is used to describe the fact that the prototypes
+contain important (and large) structural and readout elements built according to the specifications (including the size)
+of the eventual full detector.
 
-The “single-phase” (SP) LArTPC functions without amplification in the medium (liquid Argon) and is in essence a very large ionization chamber equipped with a large number of readout electrodes (wires), each with its own electronics chain. In this design, the front-end electronics is situated within the cryostat in order to minimize noise (the so-called “cold electronics design”). In the “dual-phase’’ (DP) TPC ionization electrons are extracted from the liquid into the gaseous phase of Argon, and drift in Argon gas towards a specially designed 2D structure on top of the detector where they multiply according to principles of proportional chamber operation. The two designs are complementary in the sense they explore different approaches to optimization of the Liquid Argon detector characteristics.
+The ``single-phase'' (SP) LArTPC functions without amplification in the medium (liquid Argon) and is in essence a very large ionization chamber
+equipped with a large number of readout electrodes (wires), each with its own electronics chain. In this design, the front-end electronics is
+situated within the cryostat in order to minimize noise (the so-called ``cold electronics design''). In the ``dual-phase'' (DP) TPC ionization
+electrons are extracted from the liquid into the gaseous phase of Argon, and drift in Argon gas towards a specially designed 2D structure
+on top of the detector where they multiply according to principles of proportional chamber operation. The two designs are complementary
+in the sense they explore different approaches to optimization of the Liquid Argon detector characteristics.
 
-In December of 2015 the dual-phase prototype was given the official designation as a CERN experiment “NP02”, and the single-phase was designated as “NP04”. Both are to be deployed at CERN in 2017 and scheduled to take data in 2018. The prototypes will be placed in a specially constructed large-scale extension of the existing experimental hall located in the CERN North Area. Each prototype will be provided a dedicated optical fiber network connection to the CERN central storage facilities located in the West Area campus of CERN. The nominal bandwidth of these dedicated network connections will be 20 Gbps for each experiment. The motivations for this specific choice of nominal bandwidth will be presented in the following sections.
+In December of 2015 the dual-phase prototype was given the official designation as a CERN experiment \textbf{NP02}, and the single-phase was
+designated as \textbf{NP04}. Both are to be deployed at CERN in 2017 and scheduled to take data in 2018. The prototypes will be placed in a specially
+constructed large-scale extension of the existing experimental hall located in the CERN North Area. Each prototype will be provided a dedicated
+optical fiber network connection to the CERN central storage facilities located in the West Area campus of CERN. The nominal bandwidth of these
+dedicated network connections will be 20\,Gbps for each experiment. The motivations for this specific choice of nominal bandwidth will be
+presented in the following sections.
 
-\subsection{protoDUNE Data Characteristics}
+\subsection{The protoDUNE Data Characteristics}
 
 In order to provide the necessary precision for reconstruction of the ionization patterns in the LArTPC, both single-phase and dual-phase designs share the same fundamental characteristics:
 \begin{itemize}
@@ -48,15 +67,28 @@ In order to provide the necessary precision for reconstruction of the ionization
 \item High digitization frequency (which is essential to ensure a precise position measurement along the drift direction)
 \end{itemize}
 
-Another common factor in both designs is the relatively slow drift velocity of electrons in Liquid Argon, which is of the order of millimeters per microsecond, depending on the drift volume voltage and other parameters. This leads to a substantial readout window (of the order of milliseconds) required to collect all of the ionization in the Liquid Argon volume due the event of interest. Even though the readout times are substantially different in the two designs, the net effect is similar. The high digitization frequency in every channel (as explained above) leads to a considerable amount of data per event.  Each event is comparable in size to a high-resolution digital photograph.
+\noindent
+Another common factor in both designs is the relatively slow drift velocity of electrons in Liquid Argon, which is of the order of millimeters per microsecond,
+depending on the drift volume voltage and other parameters. This leads to a substantial readout window (of the order of milliseconds) required to collect
+all of the ionization in the Liquid Argon volume due the event of interest. Even though the readout times are substantially different in the two designs,
+the net effect is similar. The high digitization frequency in every channel (as explained above) leads to a considerable amount of data per event.
+ Each event is comparable in size to a high-resolution digital photograph.
 
-As will be shown in the following sections, it is foreseen that the total amount of data to be produced by the \pd detectors will be of the order of a couple of petabytes (including commissioning runs with cosmic rays). Instantaneous and average data rates in the data transmission chain are expected to be substantial. For these reasons, capturing data streams generated by the protoDUNE DAQ systems, buffering of the data, performing fast QA analysis, and transporting the data to sites external to CERN for processing (e.g. FNAL, BNL, etc.) requires significant resources and adequate planning.
+As will be shown in the following sections, it is foreseen that the total amount of data to be produced by the \pd detectors will be of the order of a few
+petabytes (including commissioning runs with cosmic rays). Instantaneous and average data rates in the data transmission chain are expected to be
+substantial. For these reasons, capturing data streams generated by the protoDUNE DAQ systems, buffering of the data, performing fast QA analysis,
+and transporting the data to sites external to CERN for processing (e.g. FNAL, BNL, etc.) requires significant resources and adequate planning.
 
 \subsection{Prioritization}
 
-All of the many elements in the chain of data acquisition, storage, distribution and processing are critically important to derive physics results  from the data. At the same time, certain components of the data chain need to be prioritized over others in order to perform the measurements during a potentially limited time period.
+All of the many elements in the chain of data acquisition, storage, distribution and processing are critically important to derive physics results  from the data.
+At the same time, certain components of the data chain need to be prioritized over others in order to reliably perform the measurements during a potentially
+limited time period (depending on the SPS and LHC running schedule).
 
-The priority components are the DAQ and the Raw Data Management System, which includes capturing the data coming out of the DAQ, transporting the data to persistent mass storage and prompt Quality Assurance which is required to ensure corrective action can be taken if the detector or certain system problems are identified in the QA process. The latter can be thought of as sophisticated monitoring done in near-time, which implies a ``few minutes’’ scale of processing.
+The priority components are the DAQ and the Raw Data Management System, which includes capturing the data coming out of the DAQ,
+transporting the data to persistent mass storage and prompt Quality Assurance which is required to ensure corrective action can be taken
+if the detector or certain system problems are identified in the QA process. The latter can be thought of as sophisticated monitoring done in near-time,
+which implies a ``few minutes'' scale of processing.
 
 
 \section{DAQ Interface to Data Handling System}
@@ -67,7 +99,7 @@ The plan is to have adequate buffering capability in the DAQ for both NP02 and N
 
 \item In NP04 the emphasis is made on a more lightweight and fault tolerant setup which satisfies the general throughput requirement. No extensive processing is foreseen on the experiment site. Among the technical options for the buffer farm file access is xrootd.
 \end{itemize}
-It is this “outer layer” of the data acquisition system in either experiment that will need to be interfaced with \pd’s raw data management complex.
+It is this ``outer layer'' of the data acquisition system in either experiment that will need to be interfaced with \pd’s raw data management complex.
 
 \section{Requirements}
 
@@ -82,6 +114,7 @@ The following is a summary of basic requirements for the \pd data management sys
 \item Support “express lane” process at CERN and other institutions.
 \end{itemize}
 
+\noindent
 Table~\ref{fig:det_perf} contains performance measures driven by the extreme of each DP and SP detector and which the file handling system must accommodate on the assumption that they apply to both detectors.
 
 
@@ -102,8 +135,7 @@ Latency to reach express lane processing & 10~min &\\
 \caption{\label{fig:det_perf}Expected protoDUNE performance characteristics.}
 \end{table}
 
-Table~\ref{fig:dh_perf} The file handling system assumes the following limits will not be exceeded
-
+ The file handling system assumes the following limits will not be exceeded (Table~\ref{fig:dh_perf})
 \begin{table}[tbh]
 \centering
 \begin{tabular}{l l l}
