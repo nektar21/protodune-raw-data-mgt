@@ -45,9 +45,9 @@ The ``full-scale'' designation is used to describe the fact that the prototypes
 contain important (and large) structural and readout elements built according to the specifications (including the size)
 of the eventual full detector.
 
-The ``single-phase'' (SP) LArTPC functions without amplification in the medium (liquid Argon) and is in essence a very large ionization chamber
+The ``single-phase''  LArTPC functions without amplification in the medium (liquid Argon) and is in essence a very large ionization chamber
 equipped with a large number of readout electrodes (wires), each with its own electronics chain. In this design, the front-end electronics is
-situated within the cryostat in order to minimize noise (the so-called ``cold electronics design''). In the ``dual-phase'' (DP) TPC ionization
+situated within the cryostat in order to minimize noise (the so-called ``cold electronics design''). In the ``dual-phase''  TPC ionization
 electrons are extracted from the liquid into the gaseous phase of Argon, and drift in Argon gas towards a specially designed 2D structure
 on top of the detector where they multiply according to principles of proportional chamber operation. The two designs are complementary
 in the sense they explore different approaches to optimization of the Liquid Argon detector characteristics.
@@ -92,14 +92,14 @@ which implies a ``few minutes'' scale of processing.
 
 
 \section{DAQ Interface to Data Handling System}
-
+\label{sec:daq_interface}
 The plan is to have adequate buffering capability in the DAQ for both NP02 and NP04. In this case, “adequate” indicates in part conforming to a CERN requirement that the experiment must be able to keep taking data for a least 3 days at nominal rate, even if there is an occasional problem with the data link between the experiment site and CERN storage facilities, an issue with central storage or any type of similar outage. At the time of writing, there are differences in two respective approaches:
 \begin{itemize}
 \item Buffer depth in NP02 is larger, in order to make possible some processing right in the data room of the experiment. A number of middleware options are being explored for this storage solution, in particular the BeeGFS file system.
 
 \item In NP04 the emphasis is made on a more lightweight and fault tolerant setup which satisfies the general throughput requirement. No extensive processing is foreseen on the experiment site. Among the technical options for the buffer farm file access is xrootd.
 \end{itemize}
-It is this ``outer layer'' of the data acquisition system in either experiment that will need to be interfaced with \pd’s raw data management complex.
+It is this ``outer layer'' of the data acquisition system in either experiment that will need to be interfaced with the \pd raw data management complex.
 
 \section{Requirements}
 
@@ -125,9 +125,9 @@ Table~\ref{fig:det_perf} contains performance measures driven by the extreme of 
 \textbf{Performance Benchmark} & \textbf{Single Phase} & \textbf{Dual Phase}\\
 \hline
 \hline
-Raw data volume                          & 2.5~PB & \\
-Raw file volume                          & 2~M  & \\
-Data Rate                                & 20~Gbps & \\
+Raw data volume                          & 1.2\,PB & 2.5\,PB \\
+Raw data files                          & 0.6\,M  & 1.2\,M\\
+Avg. Data Rate                                & 20\,Gbps & 20\,Gbps \\
 Latency to reach EOS                     & 10~min & \\
 Latency to reach express lane processing & 10~min &\\
 \hline
@@ -226,16 +226,19 @@ services and through cache layers such as the “stash cache” system employed 
 
 \subsection{Outage and Backlog Considerations}
 \label{sec:backlog}
+As already mentioned in Sec.\ref{sec:daq_interface},
 CERN policies require that an experiment is capable of storing data locally (in the vicinity of the apparatus as opposed to CERN Central
 Storage)  for a nominal period of 3 days, to ensure that the experiment can run for a period of time even in case of network interruptions
-and storage facility outages. In an outage scenario the data preserved locally must still be committed to mass storage when a service is restored.
+and storage facility outages.
+
+In an outage scenario the data preserved locally must still be committed to mass storage when a service is restored.
 This creates a backlog situation which roughly doubles the requirements on the sustained rate of file registration and other transactions, buffer
 areas and certain other parameters of the overall system.
 
 
 \subsection{Data Throughput}
 
-The goal of the data handling system is to be performant at a level that allows for full exploitation of the underlying hardware and networking infrastructure
+The goal of the data handling system is to perform at a level that allows for full exploitation of the underlying hardware and networking infrastructure
 upon which  it is running.  In the case of the proto-Dune experiment the FTS system will be capable of operating at a sustained data processing and transfer
 rate that is greater than 80\% of the maximum theoretical bandwidth available between the primary DAQ storage systems and the EOS file storage system.
  In the current design this network bandwidth consists of two 20\,Gb/s ethernet links.  The RAID arrays or distributed file system architectures to which the
@@ -264,7 +267,7 @@ files are undergoing “active” registration/transport through the system at a
 managed while the remainder are “waiting” in the designated dropbox location.
 
 \subsection{Transfer Latency}
-The file transfer and management systems are designed to operate in an asynchronous manner to other components of the proto-DUNE DAQ. 
+The file transfer and management systems are designed to operate in an asynchronous manner to other components of the \pd DAQ. 
 Due to the polling models employed in this asynchronous model, many operations do not have fixed temporal relations to other events in the DAQ system,
 but rather will occur/complete within a well defined time window or with a certain latency.  In the case of the proto-DUNE experiment,
 the data management systems will be capable of operating within the following parameters
@@ -277,7 +280,7 @@ that file can be delayed by the number of other new or pending file currently in
 files will be handled via an internal queuing algorithm that efficiently handles the files but does provide any user specified prioritization.
 
 In the second stage of file transfers, the latency between when a file is generated by the DAQ and when it is transferred to the EOS
-system and then written/verified to archival media (via Castor) is dependent on first stage latencies (new file detection and file registration)
+system and then written/verified to archival media (via CASTOR) is dependent on first stage latencies (new file detection and file registration)
 and then the details of the archival storage system and its characteristics.  In particular the DAQ to EOS to CASTOR path will constitute a set
 of chained dependencies with an independent polling interval for each stage.  Under normal operating conditions that latency for the file to
 be transferred to EOS and be available through the data handling system is expected to be 1-2 of these polling cycles, contingent on write
@@ -319,7 +322,11 @@ The interface between the data handling system and the EOS storage system will b
 The interface between the data handling system and the CASTOR archival storage system for file ingest will be made through the APIs provided by the standard protocols already supported by both the CASTOR system and the SAM data handling system.  In particular these system both already support the xrootd protocol, gridftp and srm.  The CASTOR API to query the tape archive interfaces (to determine if a file has been successfully archived to tape and which tape it is located on) will be integrated into the SAM data handling system in a manner similar to other tape systems that SAM is already aware of (i.e. Enstore)   The CASTOR system will be declared, and configured in the SAM system as a standard tape storage system and will have files stored on it registered and mapped within SAM the replica catalog to the well defined access URIs along with additional tape location information to permit optimized retrieval.  Custom modules/utilities will be developed as needed as part of the SAM data handling suite to provide additional support for the CASTOR system in performing certain operations (i.e. bulk queries or monitoring operations).  These modules/utilities will be distributed as part of the core SAM distribution.
 
 \subsection{Data Handling to dCache/Enstore Interface}
-The interface between the SAM data handling system and the dCache/Enstore archival storage system is already fully defined and supported.  The interface fully supports standard access protocols including xrootd, gridftp, webdav and srm as well as the proprietary dcap protocol and a specialized NFS implementation that provides limited basic read access for hosts with local mounts of the dCache system. The SAM system has modules that optimize data access based on Enstore tape location information.  This interface is in wide scale production use across many experiments including NOvA, MicroBooNE, Dune 35t, Minos and others.
+The interface between the SAM data handling system and the dCache/Enstore archival storage system is already fully defined and supported.
+ The interface fully supports standard access protocols including xrootd, gridftp, webdav and srm as well as the proprietary \textit{dcap} protocol
+and a specialized NFS implementation that provides limited basic read access for hosts with local mounts of the dCache system.
+The SAM system has modules that optimize data access based on Enstore tape location information.  This interface is in wide scale
+production use across many experiments including NO$\nu$A, $\mu$BooNE, the DUNE 35t prototype, MINOS and others.
 
 \subsection{Data Handling to SAN/NAS Interface}
 Generalized SAN and NAS systems when acting as data sources (input) will be integrated to the data handling system through their POSIX style interface if available.  When enabled as data sinks (output) for the data handling system, a front end data server(s) running standard access protocols in the form of xrootd or gridftp will be utilized.  These will then be mapped into SAM as standard storage locations.
@@ -337,16 +344,30 @@ The data handling system provides a file delivery and transfer layer which acts 
 
 \section{Data Replication}
 
-The data handling systems provide for multiple replicas of files to exist across storage systems and locations.  It will be necessary to replicate data files or data sets between sites or storage locations.  The data handling systems for \pd will handle this replication in different ways depending on geographic proximity and bandwidth.  In particular in the \pd architecture at least two “Primary Zones” exists in the form of the European zone and the North American zone.  The European zone encompasses CERN and other institutions near to CERN geographically and in network bandwidth proximity, while the North American zone would encompass FNAL, BNL, the other institutions in close network proximity to the major laboratories and universities in the DUNE collaboration. 
+The data handling system must be able to manipulate multiple replicas of the data across storage systems and locations, in order
+to optimally utilize computing resources for production purposes, and make processed data readily available to researchers in
+a number of geographical areas.
+%It will be necessary to replicate data files or data sets between sites or storage locations. 
+The data handling systems for \pd will handle this replication in different ways
+depending on geographic proximity and bandwidth.  At least two ``Primary Zones'' can be identified in order
+to describe data locality in \pd -- the \textit{European Zone} and the \textit{North American Zone}.
 
-Replication within the primary zones will be handled in the following manners by the data handling systems:
+The European Zone encompasses CERN and other institutions near to CERN geographically and in network bandwidth proximity,
+while the North American zone would includes  FNAL, BNL, the other institutions
+in close network proximity to the major member institutions of the DUNE collaboration which are located in the US.
+Replication within the primary zones will be handled in the following manners by the data handling system:
 
-\begin{itemize}
-\item European Zone -- Replication and data transfers within the CERN domain will be handled by F-FTS instances configured with site specific endpoints rules (i.e. the EOS and CASTOR rule sets) which will provide for the full data sets to available in both EOS and CASTOR.  Transfer and replication operations outside the CERN domain to institutions with registered storage elements will be performed through the SAM suite’s replication tools (sam\_clone\_dataset).  Transfer or replications to smaller institutions or analysis sites without registered storage elements can be performed through the SAM/ifdh client tools (ifdh\_fetch).  The SAM client tools are which are available through CVMFS.  
+\begin{description}
+\item[European Zone] -- Replication and data transfers within the CERN domain will be handled by F-FTS instances configured with site specific endpoints rules (i.e. the EOS and CASTOR rule sets) which will provide for the full data sets to available in both EOS and CASTOR.  Transfer and replication operations outside the CERN domain to institutions with registered storage elements will be performed through the SAM suite’s replication tools (sam\_clone\_dataset).  Transfer or replications to smaller institutions or analysis sites without registered storage elements can be performed through the SAM/ifdh client tools (ifdh\_fetch).  The SAM client tools are which are available through CVMFS.  
 
-\item North American Zone -- Initial replication of the data to FNAL, BNL and other collaborating labs or large university sites will be automated through F-FTS instances at CERN and in North America which will be used to optimize the data transfer paths to each of the institutions, subject to bandwidth constraints of the host institutions.   Transfers elsewhere in the North American side would be performed using the same SAM tool suites and strategy for handling registered and unregistered storage, as specified above for the European zone. 
-\item Tertiary Institutions -- Other institutions wishing to host a set of datasets or partial data sets, will be able to register their storage elements with the SAM data catalog and will then be able to use the replication tools to clone the relevant data to their site. 
-\end{itemize}
+\item[North American Zone] -- Initial replication of the data to FNAL, BNL and other collaborating labs or large university sites will be
+automated through F-FTS instances at CERN and in North America which will be used to optimize the data transfer paths to each of
+the institutions, subject to bandwidth constraints of the host institutions.   Transfers elsewhere in the North American side would be
+performed using the same SAM tool suites and strategy for handling registered and unregistered storage, as specified above for the European zone. 
+
+\item[Other Institutions] --Organizations wishing to host a set of datasets or partial data sets will be able to register their storage
+elements with the SAM data catalog and will then be able to use the replication tools to clone the relevant data to their site. 
+\end{description}
 
 \section{File Registration}
 
