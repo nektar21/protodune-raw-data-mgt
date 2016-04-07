@@ -90,8 +90,8 @@ transporting the data to persistent mass storage and prompt Quality Assurance wh
 if the detector or certain system problems are identified in the QA process. The latter can be thought of as sophisticated monitoring done in near-time,
 which implies a ``few minutes'' scale of processing.
 
-
-\section{DAQ Interface to Data Handling System}
+\section{Requirements}
+\subsection{DAQ Interface: buffering requirements}
 \label{sec:daq_interface}
 The plan is to have adequate buffering capability in the DAQ for both NP02 and NP04. In this case, “adequate” indicates in part conforming to a CERN requirement that the experiment must be able to keep taking data for a least 3 days at nominal rate, even if there is an occasional problem with the data link between the experiment site and CERN storage facilities, an issue with central storage or any type of similar outage. At the time of writing, there are differences in two respective approaches:
 \begin{itemize}
@@ -101,7 +101,7 @@ The plan is to have adequate buffering capability in the DAQ for both NP02 and N
 \end{itemize}
 It is this ``outer layer'' of the data acquisition system in either experiment that will need to be interfaced with the \pd raw data management complex.
 
-\section{Requirements}
+\subsection{Functional Requirements}
 
 The following is a summary of basic requirements for the \pd data management system:
 \begin{itemize}
@@ -342,7 +342,8 @@ The data handling system provides a file delivery and transfer layer which acts 
 \item[CVMFS] The data handling suite includes support for distributing its client tools and homing other parts of the suite on a CVMFS read-only filesystem.  This support allows the experiments to provide widespread, efficient code distribution over a HTTP based protocol while providing a file-system layer to the end user applications.  This is a standard distribution method used to to distribute the DUNE and LARSOFT software, as well as Fermi-SAM client utilities. 
 \end{description}
 
-\section{Data Replication}
+\section{Data Replication, Registration and Catalogs}
+\subsection{Replication}
 
 The data handling system must be able to manipulate multiple replicas of the data across storage systems and locations, in order
 to optimally utilize computing resources for production purposes, and make processed data readily available to researchers in
@@ -365,11 +366,11 @@ automated through F-FTS instances at CERN and in North America which will be use
 the institutions, subject to bandwidth constraints of the host institutions.   Transfers elsewhere in the North American side would be
 performed using the same SAM tool suites and strategy for handling registered and unregistered storage, as specified above for the European zone. 
 
-\item[Other Institutions] --Organizations wishing to host a set of datasets or partial data sets will be able to register their storage
+\item[Other Institutions] -- Organizations wishing to host a set of datasets or partial data sets will be able to register their storage
 elements with the SAM data catalog and will then be able to use the replication tools to clone the relevant data to their site. 
 \end{description}
 
-\section{File Registration}
+\subsection{File Registration}
 
 Registering files or other forms of data with the SAM catalog require a set of “meta information” about the files.  This information is used to allow detailed searches to be performed to select specific data for analysis.  This metadata is broken into two general types “Base Metadata” and “Physics Metadata” which can be provided at the time of file registration, or modified later.  These metadata are composed of:
 \begin{itemize}
@@ -379,7 +380,7 @@ Registering files or other forms of data with the SAM catalog require a set of �
 
 The experiment must provide a method for determining or generating the metadata (i.e. an external program that can be run on a file, or a python module that extracts information from a filename, etc…)  and that method will be invoked by the data handling system when it encounters appropriate files.  The output of the method used must conform to a suitable format supported by the F-FTS and SAM systems.  The systems support JSON formatted files and python dictionaries for direct upload to the data catalogs.  
 
-\section{Data and Replica Catalogs}
+\subsection{Data and Replica Catalogs}
 
 The data management system for \pd will leverage the DUNE experiment’s SAM data catalog.  The underlying resources of this catalog and its software are capable of, and sized to support, a file inventory in excess of 150 million files (demonstrated by the DØ experiment’s catalog which uses the same technology).  The data catalog provides a command line toolset for both client and administrative functions, as well as a web based API for interacting with the catalog.  The web tools provide additional guidance for assisting users in finding and classifying data through the indexes.
 
