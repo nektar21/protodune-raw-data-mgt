@@ -45,7 +45,7 @@ The \pd program will help validate various DUNE technology aspects before procee
 It is designed for measurements with a test beam provided by a dedicated target and beamline system at the CERN SPS accelerator complex.
 It also has the potential to be an important platform for realistic Liquid Argon Time Projection Chamber (LArTPC) detector characterization
 (e.g. PID, shower response, etc.) utilizing controlled conditions of a test-beam experimental setup. The name ``\pd'' currently applies to two
-full-scale LArTPC prototypes based on two different technologies --- single-phase and dual-phase TPCs.
+full-scale LArTPC prototypes based on two different technologies --- single-phase (SP) and dual-phase (DP) TPCs.
 The ``full-scale'' designation is used to describe the fact that the prototypes
 contain important (and large) structural and readout elements built according to the specifications (including the size)
 of the eventual full detector.
@@ -196,99 +196,145 @@ Latency to reach express lane processing & 10\,min & 10\,min\\
 %\caption{\label{fig:dh_perf}Performance requirements for the data handling system used in the \pd experiment.}
 %\end{table}
 
-\section{General Design of the System}
-\subsection{F-FTS}
-The design presented here leverages the technology of the Fermilab File Transfer Service (F-FTS), which has been succefully applied
-in a number of Intensity Frontier Experiments and demonstrated a high degree of robustness along with automation, integrated metadata
-and extensive monitoring capabilities. In the following, instances of this system (run with different configurations) will be referred to
-as ``FTS'' for brevity.
+\section{Design}
 
-\subsection{FTS instances}
-The baseline design for the online data handling system is shown schematically in Fig.~\ref{fig:sys_topology}.
-The central idea of this design is a tandem of two FTS instances run as two separate systems within the CERN
-computing environment, and interface each other. They will be referred to as ``primary'' and ``secondary'' FTS.
-This does not reflect on their scale, prioritization or importance, but rather on their position in the data transmission chain.
+The design presented here leverages the technology of the Fermilab
+File Transfer Service (F-FTS or just FTS), which has been successfully
+applied in a number of Intensity Frontier Experiments and demonstrated
+a high degree of robustness along with automation, integrated metadata
+and extensive monitoring capabilities.
 
-\subsection{Primary FTS}
-For both NP02 and NP04 the primary FTS system are deployed within or straddling the border
-of each of the detector’s DAQ domains.
+\subsection{Fermilab File Transfer System}
 
- and is configured to run on a system which is able to access the DAQ buffer disks either through a POSIX filesystem or
-a protocol layer (e.g. xrootd, gridFTP or others).  The primary FTS system is configured on this system
-to look at one or more input directories or storage locations, commonly referred to as a ``dropboxes''.
-The FTS daemon performs periodic scans of the configured dropboxes. The system will operate asynchronously
-and independently of the \pd DAQ systems.  When the \pd DAQ has produced a file that needs to be handed over
-to the storage system, it will ``move'' (perform a filesystem/storage system atomic move operation or the equivalent)
-the file to the dropbox location. When a new file is located within one of the dropboxes,
-the system will initiate the file registration and transfer operations.
+Figure~\ref{fig:ftsbasics} shows a cartoon of the basic functionality
+of a single FTS instance.  An FTS instance is bound to one or more
+sources of input or ``dropboxes''.  A dropbox may be a POSIX-like file
+system directory or a source of data accessed through a protocol layer
+(\textit{eg} XRootD or gridFTP).
 
-%%%%%%%%%%%%%%%%%%%%%%%%
+The lifetime of a file in a dropbox is under the control of the FTS
+instance.  A file must appear in a dropbox in an atomic manner
+(\textit{eg} via the \texttt{mv} command) and otherwise the producer
+of a file runs independently from any FTS instance.  Depending on the
+nature of the dropbox, multiple file producers may contribute input files.
+
+An FTS instance periodically scans its dropbboxes.  As new files are
+discovered, FTS will initiate transfer of the file to its endpoints.
+Transfers may be handled directly by FTS or may be delegated to one of
+several $3^\mathrm{rd}$ party mechanisms.  As described in
+section~\ref{sec:cleanup}, the file is eventually removed from the
+dropbox by FTS.  Depending on the rules for cleanup, an opportunity
+exists for ad-hoc or other prompt processing of the data files while
+they reside in a dropbox.  Throughout these actions (discovery, transfer,
+removal), a record of the state of the file is maintained in a SAM
+database (section~\ref{sec:sam}).
+
 \begin{figure}[tbh]
-\centering\includegraphics[width=0.99\linewidth]{protDune-datahandling-topology.png}
-\caption{\label{fig:sys_topology}\pd data handling system topology}
+  \centering
+  \includegraphics[width=0.8\textwidth]{fts-basics.pdf}
+  \caption{Basic functionality of an FTS instance with a single input dropbox.  An optional opportunistic processing of data while it resides in the dropbox is depicted.}
+  \label{fig:ftsbasics}
 \end{figure}
-%%%%%%%%%%%%%%%%%%%%%%%%
-In the \pd model, the primary F-FTS will initiate a copy operation from the online disk buffer farms into the EOS storage system. 
-The system will use the 3rd party copy support that is provided by the xrootd protocol to allow for optimized transfers into EOS. 
-Upon completion of the initial copy into EOS, the F-FTS will initiate a ``chained'' copy (a copy that is dependent on the initial copy into EOS)
-of the data from EOS to the Castor archive system.  The F-FTS system will register each file’s metadata records (containing both basic and
-physics metadata, defined below)  in the SAM data handling system.  Upon completion of the replication of the data to Castor,
-the F-FTS will enter a monitoring/polling state of its operations to determine when the file has been successfully written to the archival media.
 
-\subsection{Deletion and Cleanup}
-
-%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[tbh]
-\centering\includegraphics[width=0.5\linewidth]{fts_file_deletion_flowchart.png}
-\caption{\label{fig:ftscleanup}Flowchart of the \pd file deletion and cleanup.}
+  \centering
+  \includegraphics[width=0.8\textwidth]{fts-basics-3rd.pdf}
+  \caption{Basic functionality of an FTS instance illustrating third-party transfers initiated by the instance.}
+  \label{fig:ftsbasicsthird}
 \end{figure}
-%%%%%%%%%%%%%%%%%%%%%%%%
-The primary F-FTS will handle the “cleanup” of its input dropbox,
-with configurable periodic cleanup passes through its current file sets.  Basic logic of the cleanup process is shown in Fig.\ref{fig:ftscleanup}.
-Central to this is a configurable multi-stage validation procedure to determine if files are eligible for deletion/cleanup from the input area.
-In particular the system can verify the archival status of files (ensuring they have been written to tape and that tape has been closed/unloaded properly)
-prior to performing any file deletion.
-
-The system may also provide an ``age'' criterion on files so that files can be retained within the DAQ environment for a specific period of time.
-This allows operations like online/nearline processing or log files to be examined within the DAQ environment after the actual transfers to archival
-storage have completed.
 
 
 
-\subsection{Secondary FTS}
-This secondary FTS system is configured to monitor the EOS locations that the primary FTS system is using as its output endpoint.
-These EOS areas serve as the input dropboxes for the secondary system. It operates in the same manner as the primary FTS,
-scanning for new files and then initiating copy requests of the data to a set of one or more destination endpoints.
+\subsection{FTS Instances}
+\label{sec:instances}
 
-%This F-FTS system will initiate the copy request between the European availability zone, and the North American availability zone.  
+Two FTS instances will be used to marshal raw data from the protoDUNE
+detectors in a manner diagrammed in Fig.~\ref{fig:ftsinstances}.  The
+``primary'' or FTS-1 instance is responsible for transferring data
+from the disk buffer farms to CERN's central EOS.  The ``secondary''
+or FTS-2 instance is responsible for transferring files from EOS to
+CASTOR, Fermilab and other receivers of the raw data set.
 
-At least one of the endpoint destinations for this service will be the FNAL-based dCache/Enstore system, where a second archival
-copy of the data will be recorded.  Additional copies to participating sites can be
-configured based on available resources and available bandwidth (e.g. direct transfer from CERN to BNL’s dCache or to PNNL’s storage facilities). 
-To perform the transfers, the F-FTS will interface with the WLCG-FTS (as a supported transfer protocol) to schedule the actual transfer
-between the storage elements.  
+This tiered approach is employed in order to make prompt use of the
+files files (see Section~\ref{sec:prompt}) from the central CERN EOS
+disk system.
 
-The exact locations of the endpoints and corresponding policies will be determined at a later date. For more comments on data replication
-please see \ref{sec:replication}.
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ftsinstances.pdf}
+  \caption{The two instances of FTS used for marshaling raw data from the protoDUNE detectors.}
+  \label{fig:ftsinstances}
+\end{figure}
 
+
+\subsection{Prompt Use}
+\label{sec:prompt}
+
+While raw data files are available on EOS they will be subject to
+prompt processing and other access.  Likely scenarios are shown in
+Fig.~\ref{fig:prompt}.
+
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.6\textwidth]{prompt.pdf}
+  \caption{Scenarios for prompt access and processing of raw data files.}
+  \label{fig:prompt}
+\end{figure}
+
+Prompt processing will be performed at CERN on a subset of the raw
+data to support commissioning and ongoing data quality monitoring.
+
+Collaborators at universities or other institutions will have ad-hoc
+access to the files while they are on CERN EOS via XRootD.  The data
+catalog (Sec.~\ref{sec:sam}) will be used to identify global file
+locations which will be resolved through the DUNE XRootD redirector or
+through cache layers such as the ``stash cache'' system employed by
+the Open Science Grid.
 
 \subsection{Data Catalog}
-Underlying the F-FTS systems will be a fully featured data management layer (SAM) which will provide the metadata and replica catalogs.
-All data being handled by the transfer systems will have corresponding records in the data handling catalog so that the content,
-locations and provenance of the data can be fully tracked.  The primary catalog systems will reside at FNAL with proxy/cache
-layers in the European and North American zones to ensure high speed connections between the servers and the (offline analysis)
-clients that will query the catalogs from these zones.  Similar scalable proxy and cache layers can be instantiated for other identified
-zones which may require high speed or optimized access to the catalog systems.
+\label{sec:sam}
+
+Underlying FTS will be a fully featured data management layer
+implemented with Fermilab's Serial Access to Metadata (SAM) system.
+It will provide file metadata, fileset definitions and replica
+catalogs.  All data being handled by the transfer systems will have
+corresponding records in the data handling catalog so that the
+content, locations and provenance of the data can be fully tracked.
+The primary catalog systems will reside at FNAL with proxy/cache
+layers in the European and North American zones to ensure high speed,
+low latency connections between the servers and the (offline analysis)
+clients that will query the catalogs from these zones.  Similar
+scalable proxy and cache layers can be instantiated for other
+identified zones as required.
+
+\subsection{Deletion and Cleanup}
+\label{sec:cleanup}
+
+An FTS instance handles the ``cleanup'' of its input dropbox, with
+configurable, periodic cleanup passes through its current file sets.
+An example cleanup process is shown in flow chart of
+Fig.\ref{fig:ftscleanup}.  Central to this is a configurable
+multi-stage validation procedure to determine if files are eligible
+for deletion/cleanup from the input area.  In particular, cleanup
+performed by FTS-1 can be based on the successful archive of the file
+to CASTOR performed by FTS-2 through metadata recorded in SAM.
+
+The system may also provide an ``age'' criterion on files so that
+files can be retained for time periods that are longer than required
+just to reach their ultimate FTS endpoints.  This allows time for
+operations like online/nearline processing of files remaining in the
+dropbox or to allow investigation of recent log files.
+
+
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.5\linewidth]{fts_file_deletion_flowchart.png}  
+  \caption{Flowchart of the \pd file deletion and cleanup.}
+  \label{fig:ftscleanup}
+\end{figure}
+
+
  
-\subsection{Replication}
-Replication between collaborating peer institutions in the same geographic zone  (e.g. national laboratories and large universities with significant
-computing/storage resources in the North American zone) will be provided through standard ``dataset'' replication tools that are a part
-of the SAM data handling suite.
-
-Data access at smaller university sites or opportunistic computing resources (e.g. Open Science Grid
-affiliated sites) is provided and optimized through support for streaming protocols such as xrootd with redirector
-services and through cache layers such as the “stash cache” system employed by the Open Science Grid.  
-
 \section{Technical Requirements to the FTS Components}
 
 \subsection{Outage and Backlog Considerations}
@@ -347,7 +393,7 @@ the recovery period.
 In summary, the FTS systems will support at least 6$\times$10$^5$ files in state of transit at any given time,
 where at least 10$^4$ of these files are undergoing ``active'' registration/transport through the system at any given time.
 In other words, $\sim$10\,k of the files are being actively
-managed and their status is constantly updated while the remainder are “waiting” in the designated dropbox location.
+managed and their status is constantly updated while the remainder are ``waiting'' in the designated dropbox location.
 
 \subsection{Transfer Latency}
 The file transfer and management systems are designed to operate in an asynchronous manner to other components of the \pd DAQ. 
@@ -485,7 +531,7 @@ elements with the SAM data catalog and will then be able to use the replication 
 
 \subsection{File Registration}
 
-Registering files or other forms of data with the SAM catalog require a set of “meta information” about the files.  This information is used to allow detailed searches to be performed to select specific data for analysis.  This metadata is broken into two general types “Base Metadata” and “Physics Metadata” which can be provided at the time of file registration, or modified later.  These metadata are composed of:
+Registering files or other forms of data with the SAM catalog require a set of ``meta information'' about the files.  This information is used to allow detailed searches to be performed to select specific data for analysis.  This metadata is broken into two general types ``Base Metadata'' and ``Physics Metadata'' which can be provided at the time of file registration, or modified later.  These metadata are composed of:
 \begin{itemize}
 \item Base Metadata -- For each file the the Fermi-SAM database requires a unique filename, the file size, and a file type string. It also allows one or more checksums - each consisting of an algorithm type name and a value - and a description of the application used to create the file. The file can also have zero or more parents (which much be files already existing in the catalog) which creates a tree of relationships between files.
 \item Physics Metadata -- There are a number of predefined physics metadata fields such as the detector configuration, the run number, the data tier, the event count, the start time and end time, and the data stream. It is also possible to define arbitrary key names for other values with either integer, float (64 bit), or string types.
