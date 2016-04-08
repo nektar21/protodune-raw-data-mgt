@@ -1,0 +1,54 @@
+The data management and transfer systems requirements are enumerated in table XX according to the category to which they belong.
+Data throughput
+The goal of the data handling system is to be performant at a level that allows for full exploitation of the underlying hardware and networking infrastructure that it is running on.  In the case of the proto-Dune experiment the FTS system will be capable of operating at a sustained data processing and transfer rate that is 80\% of the maximum theoretical bandwidth available between the primary DAQ storage systems and the EOS file storage system.  In the current design this network bandwidth is a 20 Gb/s ethernet link.  The raid arrays or distributed file system architectures to which the data will be written and read from are assumed to have similar or lower available bandwidth.  The actual observed read/write bandwidth will be determined by the actual choice of hardware that is deployed to the detectors.  The primary DAQ FTS system will be required to operate at a sustained effective bandwidth of the lesser of: 16 Gb/s (80\% of theoretic network bandwidth) or 80\% of the measured read access bandwidth from the storage arrays [during simultaneous write operations, if the DAQ computing models requires this mixed access mode] under the standard proto-DUNE operations.
+
+Transaction throughput
+The goal of the data handling system is to be performant at a level that allows for full exploitation of the underlying hardware and networking infrastructure that it is running on. 
+Technical Specifications
+Data throughput
+Transaction throughput
+Simultaneous “in flight” files
+Latencies
+DAQ to CERN Storage (EOS)
+DAQ to North America
+DAQ to Archive
+
+Input Interface Specification
+Online buffer farm.
+It is assumed that each protoDUNE detector will have a disk buffer farm (BF) large enough to hold 3 days of data
+It is assumed that FTS can have needed access to read files for transfer.
+FTS will be notified about a file ready to be transferred by its appearance (eg, an atomic operations such as Unix ``mv'')
+
+Output Interface Specification
+Storage System Integration
+EOS -- EOS should need very little effort to integrate; it needs to be declared as  a Fermi-SAM data disk in the Dune Fermi-SAM instance, and we should use xrootd to transfer in and out of it.
+EOS uses standard transfer interfaces - including xrootd, gridftp, webdav and srm. The preferred interface is xrootd.
+CASTOR -- Castor will need at a baseline the same sort of integration as EOS, but with additional development on the Fermi-SAM side to discover tape location information for files, request file stage-ins and list files recently migrated to tape.
+CASTOR provides standard interfaces for file transfers, xrootd, gridftp or srm. However querying the tape metadata requires custom utilities.
+dCache Enstore -- dCache is already fully supported by Fermi-SAM
+dCache supports standard interfaces - xrootd, gridftp, webdav and srm. It also supports NFS access for local hosts and the proprietary dcap protocol. Accessing the tape metadata requires custom utilities. 
+SAN -- a SAN or NAS system can act as a data source if it has a POSIX style interface. To enable it as a sink, or to provide scalable access to the source, requires one or more data servers running a protocol such as xrootd or gridftp.
+Protocol Integration
+XROOTD -- Full support for xrootd is currently being rolled into the ``ifdh'' transfer layer underneath Fermi-SAM and the Fermi-FTS
+
+WLCG FTS -- Currently we are debating between ifdh layer integration and having the sam_cp layer behind Fermi-FTS invoke Cern-FTS for copies outbound from Cern.  We should use it for outbound transfers from CERN so that it can manage throughput on the outbound data transfers.
+
+GridFTP -- this protocol is supported for most of the components involved, but is not the preferred or documented interface for any of the CERN storage components.
+
+HTTP -- Fermi-SAM uses HTTP for internal communication between Fermi-FTS and the Fermi-SAM instances, and for client programs wanting file location and metadata information.
+CVMFS -- a file-system layered over HTTP used to distribute the DUNE and LARSOFT software, as well as Fermi-SAM client utilities. 
+Data Replication
+Primary Zones
+Euro Zone -- the data copies around CERN would be handled by Fermi-FTS instances, as full sets are desired in  EOS and CASTOR.   Transfers elsewhere in the European side would be done from CERN using ifdh_fetch to local disk areas not registered in Fermi-SAM, or via sam_clone_dataset for locations registered to Fermi-SAM.  Tools such as sam_clone_dataset are available in CVMFS.
+North American Zone -- initial data copies to FNAL, BNL, and other desired laboratories would be automatic via FTS instances; Transfers elsewhere in the North American side would be done from Fermilab  using ifdh_fetch to local disk areas not registered in Fermi-SAM, or via sam_clone_dataset for locations registered to Fermi-SAM. Tools such as sam_clone_dataset are available in CVMFS.
+
+Tertiary Institutions -- Other institutions that would like to host partial datasets can have a storage element at their site registered as a Fermi-SAM data disk, and then subsets of data can be transfered their via sam_clone_dataset and other Fermi-SAM utilities. Tools such as sam_clone_dataset are available in CVMFS.
+
+File Registration
+Metadata -- For each file the the Fermi-SAM database requires a unique file name, the file size, a file type string. It also allows one or more checksums - each consisting of an algorithm type name and a value - and a description of the application used to create the file. The file can also have zero or more parents (which much be files already existing in the catalog) which creates a tree of relationships between files.
+Physics Metadata -- There are a number of predefined physics metadata fields such as the detector configuration, the run number, the data tier, the event count, the start time and end time, and the data stream. It is also possible to define arbitrary key names for other values with either integer, float (64 bit), or string types.
+The experiment must determine the method to generate metadata in a suitable format (for example JSON) to load into the catalog.
+Data Catalog -- The DUNE Fermi-SAM instance will be acting as the data catalog.  Additional web tools will be provided to give users guidance to find appropriate datasets and to index the data.
+Replica Catalog - The DUNE Fermi-SAM instance will be acting as the replica catalog.
+Each replica location in the catalog consists of a storage identifier and a path. The location description is protocol neutral and a configurable mapping layer translates the locations to a URL of the requested protocol schema.
+Transfer Technology -- Most transfers will be utilizing xrootd or gsiftp copies over a combination of the lab local networks and WAN networks interconnecting the various labs (ESNET, GEANT, US LHCNet, etc.).  Both of these protocols support using multiple TCP channels over the network for higher throughput.

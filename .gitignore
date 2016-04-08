@@ -1,12 +1,13 @@
 auto
 *~
-*.png
 *.aux
 *.fls
 *.log
 *.out
 *.toc
+*.gz
 pdrdm.pdf
+protoDUNE-DMS-design.pdf
 *.fdb_latexmk
 *.bbl
 *.blg
