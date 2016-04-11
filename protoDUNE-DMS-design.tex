@@ -281,8 +281,7 @@ other prompt processing for monitoring and QA purposes,
 and also as data source for production taking place at CERN.
 Specifics of the latter have not been fully worked out at the time of writing
 and will be one of the work areas prior to \pd commissioning.
-
-Likely scenarios are shown in Fig.~\ref{fig:prompt}.
+An example of data flow is shown in Fig.~\ref{fig:prompt}.
 
 \begin{figure}[tbh]
   \centering
@@ -291,8 +290,8 @@ Likely scenarios are shown in Fig.~\ref{fig:prompt}.
   \label{fig:prompt}
 \end{figure}
 
-Prompt processing will be performed at CERN on a subset of the raw
-data to support commissioning and ongoing data quality monitoring.
+%Prompt processing will be performed at CERN on a subset of the raw
+%data to support commissioning and ongoing data quality monitoring.
 
 Collaborators at universities or other institutions will have ad-hoc
 access to the files while they are on CERN EOS via XRootD and other mechanisms if desired. 
@@ -449,7 +448,7 @@ for interfacing  both data input and output systems.  In the \pd experiment the 
 
 \subsection{The DAQ Interface}
 The interface between the core DAQ system and the data handling system is made at the DAQ’s disk buffer farm.
-When the final stage event builder have completed the assembly of a file, the file will be handed off to the data handling system
+When the final stage event builders have completed the assembly of a file, the file will be handed off to the data handling system
 by the DAQ by placing the file into a designated ``dropbox'' area on the target file system.  For POSIX compliant file systems,
 this can be accomplished through an atomic move operation (i.e. Unix \textit{mv} equivalent) which minimizes the I/O overhead associated
 with the hand off.  No signals need be emitted from the DAQ, nor will any other form of message be required in the direction of the
@@ -461,7 +460,7 @@ or an API that provides access to standard meta information regarding the storag
 (i.e. filenames, file size, create/modify times etc…)  Additionally the FTS will require a file read API for the purpose of metadata
 extraction from the file and for checksum computations (if not provided through some other means).  The system will require a
 delete API and privilege, if the automated cleanup options are desired/enabled.  If the DAQ storage elements support ``third party''
-transfer protocols, the FTS can use these to reduced overhead in performing the actual file transfer operations.
+transfer protocols, the FTS can use these to reduced overhead in performing the actual file transfer operations  (see Fig. \ref{fig:ftsbasicsthird}).
 
 The organization of the FTS dropbox area(s) will be configured to support the volume of data that would be generated during a
 sustained outage (of non-DAQ systems) of no less than 3 days plus the time required to register/process the volume of data
@@ -543,11 +542,12 @@ elements with the SAM data catalog and will then be able to use the replication 
 \subsection{File Registration}
 
 Registering files or other forms of data with the SAM catalog require a set of ``meta information'' about the files.  This information is used to allow detailed searches to be performed to select specific data for analysis.  This metadata is broken into two general types ``Base Metadata'' and ``Physics Metadata'' which can be provided at the time of file registration, or modified later.  These metadata are composed of:
-\begin{itemize}
-\item Base Metadata -- For each file the the Fermi-SAM database requires a unique filename, the file size, and a file type string. It also allows one or more checksums - each consisting of an algorithm type name and a value - and a description of the application used to create the file. The file can also have zero or more parents (which much be files already existing in the catalog) which creates a tree of relationships between files.
-\item Physics Metadata -- There are a number of predefined physics metadata fields such as the detector configuration, the run number, the data tier, the event count, the start time and end time, and the data stream. It is also possible to define arbitrary key names for other values with either integer, float (64 bit), or string types.
-\end{itemize}
+\begin{description}
+\item[Base Metadata] -- For each file the the Fermi-SAM database requires a unique filename, the file size, and a file type string. It also allows one or more checksums - each consisting of an algorithm type name and a value - and a description of the application used to create the file. The file can also have zero or more parents (which much be files already existing in the catalog) which creates a tree of relationships between files.
+\item[Physics Metadata] -- There are a number of predefined physics metadata fields such as the detector configuration, the run number, the data tier, the event count, the start time and end time, and the data stream. It is also possible to define arbitrary key names for other values with either integer, float (64 bit), or string types.
+\end{description}
 
+\noindent
 The experiment must provide a method for determining or generating the metadata (i.e. an external program that can be run on a file, or a python module that extracts information from a filename, etc…)  and that method will be invoked by the data handling system when it encounters appropriate files.  The output of the method used must conform to a suitable format supported by the F-FTS and SAM systems.  The systems support JSON formatted files and python dictionaries for direct upload to the data catalogs.  
 
 \subsection{Data and Replica Catalogs}
@@ -578,6 +578,9 @@ specific to local access methods on POSIX file systems.
 
 The file transport layer uses a modular design with an abstraction layer so that new protocols or access methods can be added to the system without changes to the other interface layers.  The system can also select or prioritize the replica source location and access protocol based on destination characteristics (i.e. it can prefer a local cache copy of a file to a replica that is at a transatlantic location)  The system will also support offloading of transfers to 3rd party transport systems (e.g. WLCG FTS) to properly balance the resources of different WAN connections and site resources.
 
+\section{Hardware Requirements}
+Specifications of the hardware required to implement the systems as described above will be developed at a later data, along with more detailed
+design.
 
 
 \end{document}
