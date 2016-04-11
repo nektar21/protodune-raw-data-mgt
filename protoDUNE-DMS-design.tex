@@ -47,8 +47,8 @@ It also has the potential to be an important platform for realistic Liquid Argon
 (e.g. PID, shower response, etc.) utilizing controlled conditions of a test-beam experimental setup. The name ``\pd'' currently applies to two
 full-scale LArTPC prototypes based on two different technologies --- single-phase (SP) and dual-phase (DP) TPCs.
 The ``full-scale'' designation is used to describe the fact that the prototypes
-contain important (and large) structural and readout elements built according to the specifications (including the size)
-of the eventual full detector.
+contain important (and large) structural and readout elements built according to the specifications
+of the eventual full detector (including the size).
 
 The ``single-phase''  LArTPC functions without amplification in the medium (liquid Argon) and is in essence a very large ionization chamber
 equipped with a large number of readout electrodes (wires), each with its own electronics chain. In this design, the front-end electronics is
@@ -105,7 +105,10 @@ Conceptual diagram of the raw data flow in \pd is presented in Fig.\ref{fig:raw_
 system at CERN (the high-performance distributed disk storage) in the \pd raw data management scheme. This is motivated by the experience
 and architecture of the LHC experiments. EOS serves as the staging area from which the data gets committed to archival tape storage at
 CERN (CASTOR) and from which it is transmitted to a number of endpoints including principal data centers such as FNAL and others.
-It is also used to provide input to QA and other express processing streams at CERN (``prompt use'').
+It is also used to provide input to QA and other express processing streams at CERN (which fall into the ``prompt use'' category).
+
+Data centers at BNL and NERSC are placed in this diagram for illustration purposes only. Other institutions possessing adequate
+resources can participate in this data distriburtion scheme if desired.
 
 \subsection{Prioritization}
 
@@ -269,12 +272,17 @@ it makes possible prompt use of the files residing in EOS, as explained below.
 \end{figure}
 
 
-\subsection{Prompt Use}
+\subsection{Express Streams and other ``Prompt Use''}
 \label{sec:prompt}
 
-While raw data files are available on EOS they will be subject to
-prompt processing and other access.  Likely scenarios are shown in
-Fig.~\ref{fig:prompt}.
+While raw data files are available on EOS they can be
+used for a number of purposes, such as express streams and
+other prompt processing for monitoring and QA purposes,
+and also as data source for production taking place at CERN.
+Specifics of the latter have not been fully worked out at the time of writing
+and will be one of the work areas prior to \pd commissioning.
+
+Likely scenarios are shown in Fig.~\ref{fig:prompt}.
 
 \begin{figure}[tbh]
   \centering
