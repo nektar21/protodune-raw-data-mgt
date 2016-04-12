@@ -1,7 +1,7 @@
-TEST
-+++ ATTENTION: protoDUNE-DMS-design.tex is the main source of the current document +++
+# ATTENTION
+*protoDUNE-DMS-design.tex is the main source of the current document*
 
-A.
+# protoDUNEs
 This is repository contains documents for a proposed raw data managment system for the protoDUNE detectors:
 * NP02 - the dual-phase detector
 * NP04 - the single-phase detector
