@@ -1,14 +1,13 @@
 # Data Management for protoDUNE
-## Documents in this repository
-* *protoDUNE-DMS-design.tex is the main source of the current document*
-
-# protoDUNEs
+## Overview
 This is repository contains documents for a proposed raw data managment system for the protoDUNE detectors:
 * NP02 - the dual-phase detector
 * NP04 - the single-phase detector
 
-B.
-The file pdrdm.tex and the two charts that go in it,
+## Documents in this repository
+* *protoDUNE-DMS-design.tex is the main source of the current document*
+
+* The file pdrdm.tex and the two charts that go in it,
 "flow" and "state", is an initial note evaluating basic design requirements.
 
 C.
