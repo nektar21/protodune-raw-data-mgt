@@ -1,0 +1,109 @@
+\documentclass[pdftex,12pt,letter]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage[pdftex,pdfpagelabels,bookmarks,hyperindex,hyperfigures]{hyperref}
+
+\bibliographystyle{unsrt}
+
+\newcommand{\fixme}[1]{\textbf{FIXME: #1}}    
+
+
+\title{Single-Phase protoDUNE Disk Buffer Farm}
+\date{\today}
+\author{M. Potekhin and B. Viren}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  The requirements for a data buffer between the single-phase
+  protoDUNE detector DAQ and central CERN computing are given.  A
+  model of the DAQ and expected CERN environment is developed and
+  emulated at Brookhaven National Lab in order to test and develop
+  possible designs for a buffer system based on XRootD.  A proposal
+  for a design to be built at CERN is presented.  Finally, a
+  functional test of the Fermilab File Transfer System is described
+  and results are presented.
+\end{abstract}
+
+\tableofcontents
+
+\pagebreak
+
+
+\section{Overview}
+
+We will fill in this document as we do the work.  Right now it is just
+an outline.
+
+\section{Requirements and Assumptions}
+
+This section will give:
+\begin{itemize}
+\item data rates based on the data taking ``scenarios'' spread sheet
+\item CERN requirements (eg, 3 days buffer)
+\item assumptions about various bandwidths (eg network and disk)
+\item ...
+\end{itemize}
+
+
+\section{DAQ and Environment Model}
+
+We will develop a simple, functionally equivalent emulation for the SP
+DAQ data source and implement a model of the network environment from
+DAQ to EOS.
+
+\section{Results}
+
+We will look at:
+
+\begin{itemize}
+\item scaling as a function of number of concurrent writes 
+\item forced different bottlenecks at NIC and disk.
+\item effect of simultaneous reads/writes to same box, bus, disk. 
+\item ...
+\end{itemize}
+
+This test will be done at BNL, probably on existing RACF LBNE nodes.
+For it we have identified 3 interactive nodes and 7 pure-batch nodes
+with an existing round-robin XRootD installation.
+
+\section{Design}
+
+Based on results this section will provide 
+\begin{itemize}
+\item design for hardware (number of nodes, disk speeds, RAM, etc)
+\item configuration
+\item any limitations (eg, on number of simultaneous reads+writes)
+\end{itemize}
+
+\section{FTS Testing}
+
+There are three parts to this testing.
+
+\begin{enumerate}
+\item Buffer farm $\to$ ``EOS''
+\item ``EOS'' $\to$ FNAL
+\item FNAL $\to$ ``OSG''
+\end{enumerate}
+
+The quotes are used as ``EOS'' will be emulated with a simple storage
+node at BNL and ``OSG'' will simply again be nodes at BNL.  The goal
+is a functional tests of all these types of transfers if not a
+performance one.
+
+More information about FTS is in the document ``Design of the Data
+Management System for the protoDUNE Experiment'').
+
+\section{References}
+\bibliography{citedb}
+
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
