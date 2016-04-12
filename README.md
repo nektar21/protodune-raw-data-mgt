@@ -1,5 +1,6 @@
-# ATTENTION
-*protoDUNE-DMS-design.tex is the main source of the current document*
+# Data Management for protoDUNE
+## Documents in this repository
+* *protoDUNE-DMS-design.tex is the main source of the current document*
 
 # protoDUNEs
 This is repository contains documents for a proposed raw data managment system for the protoDUNE detectors:
