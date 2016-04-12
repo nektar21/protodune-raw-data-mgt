@@ -4,28 +4,32 @@
 \usepackage{graphicx}
 \usepackage{cite}
 \usepackage[pdftex,pdfpagelabels,bookmarks,hyperindex,hyperfigures]{hyperref}
+\newcommand{\pd}{protoDUNE\ }
+\newcommand{\pdd}{protoDUNE.\ }
 
 \bibliographystyle{unsrt}
 
 \newcommand{\fixme}[1]{\textbf{FIXME: #1}}    
 
 
-\title{Single-Phase protoDUNE Disk Buffer Farm}
+\title{Prototyping and Test of the Single-Phase protoDUNE Buffer Farm}
 \date{\today}
-\author{M. Potekhin and B. Viren}
+\author{M. Potekhin$^a$ and B. Viren$^a$\\
+\ \\
+$^a$\textit{Brookhaven National Laboratory, Upton NY}
+}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-  The requirements for a data buffer between the single-phase
-  protoDUNE detector DAQ and central CERN computing are given.  A
-  model of the DAQ and expected CERN environment is developed and
-  emulated at Brookhaven National Lab in order to test and develop
-  possible designs for a buffer system based on XRootD.  A proposal
-  for a design to be built at CERN is presented.  Finally, a
-  functional test of the Fermilab File Transfer System is described
-  and results are presented.
+The requirements for a XRootD-based data buffer between the single-phase
+protoDUNE detector DAQ and central CERN computing are given.  Plans are made to
+create a data source emulator equivalent to the  \pd DAQ, and also emulate several
+elements of the CERN computing  environment in order to prototype the raw data management system for \pdd
+This work shall be done at Brookhaven National Lab. A proposal for a system design to be built at CERN is presented.
+Finally, a functional test of the Fermilab File Transfer System is described within the context of the \pd raw
+data management.
 \end{abstract}
 
 \tableofcontents
@@ -34,9 +38,12 @@
 
 
 \section{Overview}
-
+\subsection{Under Construction!}
 We will fill in this document as we do the work.  Right now it is just
 an outline.
+
+\subsection{the protoDUNE program}
+The description of the protoDUNE experimental program can be found in (provide quotes).
 
 \section{Requirements and Assumptions}
 
