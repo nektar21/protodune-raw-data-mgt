@@ -129,12 +129,18 @@ primarily means conforming to the CERN requirement that the experiment must be a
 least 3 days at the nominal data rate, even if there is an occasional problem with the data link between the
 experiment site and CERN central storage facilities, or an issue with the central storage systems or any type of similar outage.
 At the time of writing, there are differences in how the two \pd experiments approach this:
-\begin{itemize}
-\item Buffer depth in NP02 is larger, in order to make possible some processing right in the data room of the experiment. A number of middleware options are being explored for this storage solution, in particular the BeeGFS file system.
+\begin{description}
 
-\item In NP04 the emphasis is made on a more lightweight and fault tolerant setup which satisfies the general buffering and throughput requirements.
-No extensive processing is foreseen on the experiment site. Among the possible technical options for the buffer farm file access is xrootd.
-\end{itemize}
+\item[NP02] The planned buffer depth is rather large (petabyte scale), in order to enable a substantial amount of
+processing locally at the site of the experiment. To make this possible, design and plans exist to deploy the necessary
+computing resources (equivalent to hundreds of cores) in the data room of NP02. A number of options are being explored
+for the NP02 buffer storage solution, including GPFS and XRootD.
+
+\item[ NP04] Here the emphasis is on a more lightweight and fault tolerant setup which satisfies the general buffering and throughput requirements.
+No extensive processing is foreseen on the experiment site. Among the possible technical options for the buffer farm file access is XRootD.
+\end{description}
+
+\noindent
 It is this ``outer layer'' of the data acquisition system (the buffer) in either experiment that will need to be interfaced with
 the \pd raw data management complex.  It is represented as the block labeled ``buffer farm'' in Fig.\ref{fig:raw_concept}.
 
@@ -310,7 +316,8 @@ catalogs.  All data being handled by the transfer systems will have
 corresponding records in the data handling catalog so that the
 content, locations and provenance of the data can be fully tracked.
 The primary catalog systems will reside at FNAL with proxy/cache
-layers in the European and North American zones to ensure high speed,
+layers in the European and North American zones (see \ref{sec:replication}
+for more details on data replication) to ensure high speed,
 low latency connections between the servers and the (offline analysis)
 clients that will query the catalogs from these zones.  Similar
 scalable proxy and cache layers can be instantiated for other
@@ -499,16 +506,35 @@ POSIX style interface if available.  When enabled as data sinks (output) for the
 running standard access protocols in the form of xrootd or gridftp will be utilized.  These will then be mapped into SAM as standard storage locations.
   
 \subsection{Generalized Protocol Support Interfaces}
-The data handling system provides a file delivery and transfer layer which acts to provide protocol abstraction to the end users
-(i.e. provides a consistent command interface) and provides a protocol bridge when performing transfer operations between dissimilar
-storage systems (i.e. cross protocol transfers).  The ``Intensity Frontier Data Handling'' tool (IFHD) for \pd will support protocol integration for:
+The data handling system provides a file delivery and transfer layer which acts to provide protocol abstraction
+to the end users (i.e. provides a consistent command interface) and provides a protocol bridge when performing
+transfer operations between dissimilar storage systems (i.e. cross protocol transfers).  The ``Intensity Frontier
+Data Handling'' tool (IFHD) for \pd will support protocol integration for:
 \begin{description}
-\item[XROOTD] Full support will be provided for xrootd in the Fermi-SAM data catalog, F-FTS and IFDH layers.  Currently these tools support read/write access methods.  Full support for additional xrootd features (listings, permissions modification, etc...) is currently under development.
-\item[WLCG FTS] SAM, F-FTS and IFDH will support WLCG-FTS as a 3rd party or proxy transfer mechanism.  In this mode outbound file transfers originated from the CERN domain can offloaded to WLCG-FTS so that the data traffic across the CERN site can be properly scheduled and balanced.  Support for this mode of operation will be integrated into IDFH or directly into the sam\_cp layer of the F-FTS. 
-\item[GridFTP] This protocol is fully supported for most of the components involved, but is not the preferred or documented interface for any of the CERN storage components.
-\item[SRM] This protocol is fully supported for most of the component systems involved, but is not the preferred or documented interface specification for the CERN storage components.
-\item[HTTP] Fermi-SAM uses HTTP for internal communication between Fermi-FTS and the Fermi-SAM instances, and for client programs wanting file location and metadata information. It is also a supported file transfer interface into DCache.
-\item[CVMFS] The data handling suite includes support for distributing its client tools and homing other parts of the suite on a CVMFS read-only filesystem.  This support allows the experiments to provide widespread, efficient code distribution over a HTTP based protocol while providing a file-system layer to the end user applications.  This is a standard distribution method used to to distribute the DUNE and LARSOFT software, as well as Fermi-SAM client utilities. 
+\item[XROOTD] Full support will be provided for xrootd in the Fermi-SAM data catalog, F-FTS and IFDH layers.
+Currently these tools support read/write access methods.  Full support for additional xrootd features (listings,
+permissions modification, etc...) is currently under development.
+
+\item[WLCG FTS] SAM, F-FTS and IFDH will support WLCG-FTS as a 3rd party or proxy transfer mechanism.
+ In this mode outbound file transfers originated from the CERN domain can offloaded to WLCG-FTS so that the
+data traffic across the CERN site can be properly scheduled and balanced.  Support for this mode of operation
+will be integrated into IDFH or directly into the sam\_cp layer of the F-FTS. 
+
+\item[GridFTP] This protocol is fully supported for most of the components involved, but is not the preferred or
+documented interface for any of the CERN storage components.
+
+\item[SRM] This protocol is fully supported for most of the component systems involved, but is not the preferred
+or documented interface specification for the CERN storage components.
+
+\item[HTTP] Fermi-SAM uses HTTP for internal communication between Fermi-FTS and the Fermi-SAM instances,
+and for client programs wanting file location and metadata information. It is also a supported file transfer interface
+into DCache.
+
+\item[CVMFS] The data handling suite includes support for distributing its client tools and homing other parts of
+the suite on a CVMFS read-only filesystem.  This support allows the experiments to provide widespread,
+efficient code distribution over a HTTP based protocol while providing a file-system layer to the end user
+applications.  This is a standard distribution method used to to distribute the DUNE and LARSOFT software,
+as well as Fermi-SAM client utilities. 
 \end{description}
 
 \section{Data Replication, Registration and Catalogs}
@@ -521,6 +547,7 @@ a number of geographical areas.
 The data handling systems for \pd will handle this replication in different ways
 depending on geographic proximity and bandwidth.  At least two ``Primary Zones'' can be identified in order
 to describe data locality in \pd -- the \textit{European Zone} and the \textit{North American Zone}.
+Additional zones can be configured if needed.
 
 The European Zone encompasses CERN and other institutions near to CERN geographically and in network bandwidth proximity,
 while the North American zone would includes  FNAL, BNL, the other institutions
@@ -528,7 +555,12 @@ in close network proximity to the major member institutions of the DUNE collabor
 Replication within the primary zones will be handled in the following manners by the data handling system:
 
 \begin{description}
-\item[European Zone] -- Replication and data transfers within the CERN domain will be handled by F-FTS instances configured with site specific endpoints rules (i.e. the EOS and CASTOR rule sets) which will provide for the full data sets to available in both EOS and CASTOR.  Transfer and replication operations outside the CERN domain to institutions with registered storage elements will be performed through the SAM suite’s replication tools (sam\_clone\_dataset).  Transfer or replications to smaller institutions or analysis sites without registered storage elements can be performed through the SAM/ifdh client tools (ifdh\_fetch).  The SAM client tools are which are available through CVMFS.  
+\item[European Zone] -- Replication and data transfers within the CERN domain will be handled by F-FTS instances configured
+with site specific endpoints rules (i.e. the EOS and CASTOR rule sets) which will provide for the full data sets to available in
+both EOS and CASTOR.  Transfer and replication operations outside the CERN domain to institutions with registered storage
+elements will be performed through the SAM suite’s replication tools (sam\_clone\_dataset).  Transfer or replications to smaller
+institutions or analysis sites without registered storage elements can be performed through the SAM/ifdh client tools (ifdh\_fetch).
+The SAM client tools are which are available through CVMFS.  
 
 \item[North American Zone] -- Initial replication of the data to FNAL, BNL and other collaborating labs or large university sites will be
 automated through F-FTS instances at CERN and in North America which will be used to optimize the data transfer paths to each of
@@ -579,7 +611,7 @@ specific to local access methods on POSIX file systems.
 The file transport layer uses a modular design with an abstraction layer so that new protocols or access methods can be added to the system without changes to the other interface layers.  The system can also select or prioritize the replica source location and access protocol based on destination characteristics (i.e. it can prefer a local cache copy of a file to a replica that is at a transatlantic location)  The system will also support offloading of transfers to 3rd party transport systems (e.g. WLCG FTS) to properly balance the resources of different WAN connections and site resources.
 
 \section{Hardware Requirements}
-Specifications of the hardware required to implement the systems as described above will be developed at a later data, along with more detailed
+Specifications of the hardware required to implement the systems as described above will be developed at a later data, along with a more detailed
 design.
 
 
