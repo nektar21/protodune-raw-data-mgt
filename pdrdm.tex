@@ -24,8 +24,8 @@ $^a$\textit{Brookhaven National Laboratory, Upton NY}
 The protoDUNE detectors (dual-phase NA02 and single-phase NA04)
 require a number of systems in order to marshal raw data from
 their respective DAQ to prompt processing and mass storage.  This
-document provides a high-level description of essnetial functionality and
-configuration of these systems.
+document provides a high-level description of essential functionality and
+configuration of these systems, and initial notes on their design.
 \end{abstract}
 \pagebreak
 \tableofcontents
@@ -36,7 +36,7 @@ configuration of these systems.
 \subsection{The role of the Raw Data Management System}
 This document sets forth a few requirements for a protoDUNE Raw Data Management System
 (which will be referred to as \textbf{RDMS} for brevity in this text).  The system will receive the raw data from
-two sources: Data Acquisition Systems for the NP02 Dual-Phase (DP) and NP04 Single-Phase (SP) DUNE prototype detectors.
+two sources: separate Data Acquisition Systems for the NP02 Dual-Phase (DP) and NP04 Single-Phase (SP) DUNE prototype detectors.
 It will provide support for prompt (``express streams'' and other) processing.  It will marshal the data to mass storage, first
 to to the offline disk and then to the archive tape system at CERN. It will also transfer a copy to FNAL and potentially
 to a few other sites in the US and Europe for production and analysis.
@@ -54,25 +54,25 @@ Fig.\ref{fig:flow} shows an overview of the systems that will be required.
 \noindent
 In this diagram, red indicates systems where new development is needed.  Lined circles indicate disk and lined boxes indicate
 tape storage hardware systems. Diamonds indicate software systems.  Solid arrows indicate flow of detector data, dotted
-arrows indicate flow of metadata and dashed indicates database queries. In this scheme, the major hardware systems are:
+arrows indicate flow of metadata and dashed indicates database queries.
 
+\subsection{Hardware Systems}
 \begin{description}
-\item[Buffer Farms] each detector is expected to have a nearby and
-  dedicated disk buffer farm
-\item[RDM Server] hardware to run the RDM database and its Agent Interface.
+\item[Buffer Farms] each detector is expected to have a nearby and   dedicated disk buffer farm
+\item[RDMS Servers] hardware to run the RDMS databases and its Agent Interface.
 \item[EOS \& CASTOR] CERN's disk and tape systems
-\item[Enstore] FNAL's tape system
+\item[Enstore] FNAL tape system
 
 \end{description}
 
-\noindent The major software systems are:
+\subsection{Software Systems}
 
 \begin{description}
-\item[PDRDM] The protoDUNE Raw Data Management system is a central
-  catalog for holding the state of all raw data files.
-\item[agents] Various programs responsible for performing some action
-  on a set of raw data files, potentially based on the state of the
-  PDRDM and recording the outcome to the PDRDM system.
+\item[DB and its interfaces] The RDMS contains a central catalog for holding the state of all raw data files, which
+must be equipped with a proper interface.
+
+\item[agents] Various programs responsible for performing some action on a set of raw data files, potentially based on the state 
+registered in the DB and recording the outcome to the DB.
 \end{description}
 
 \noindent Details of these systems are given in the following sections.
@@ -81,24 +81,38 @@ arrows indicate flow of metadata and dashed indicates database queries. In this 
 
 \subsection{Buffer Farms}
 
-It is assumed that each prototype detector has a nearby and dedicated
-\textit{disk buffer farm} (BF).  They are required in order to isolate
-online systems from offline ones.  Each BF is not necessarily expected
-to be identical in terms of hardware characteristics or its software
-because the two DAQs differ.  Their individual characteristics are:
+Initial design for both NP02 and NP04 includes a nearby and dedicated \textit{buffer farm} cluster storage system. 
+They are necessary to meet a number of requriements, such as
+\begin{itemize}
+\item Isolate online systems from offline ones and provide adequate local buffer space to enable data taking
+even in the event of an outage in the network connection to the CERN central storage or mass storage
+itself.
 
-\begin{description}
-\item[DP buffer farm] configured with 1.4PB disk in 15 servers holding 16 disks each and 2x10GBE.~\cite{marteau}
-\item[SP buffer farm] requires \fixme{XXX} TB distributed over
-  \fixme{XXX} nodes with \fixme{XXX} bandwidth.  It is provided by
-  \fixme{DUNE(?)}.
-\end{description}
+\item Provide necessaty bandwidth for recording data at a very high rate which cannot be achieved
+by a single disk drive.
 
-As described more in section~\ref{subsec:eosxferagent}, it is expected
-that starting from the buffer farms the handling of the data from each
-detector source will be symmetric in terms of what systems are
-employed.  Other differences such as data rates, total volume, format
-must be accommodated.
+\item In case of NP02, serve as a large staging area for the processing of the data that is planned to take place
+locally on site of the experiment. This is not planned for NP04.
+
+\end{itemize}
+
+\noindent  The two buffer farms are not expected to be similar or identical  in terms of hardware characteristics, configuration or its software
+because the two DAQs differ.
+
+%Their individual characteristics are:
+
+%\begin{description}
+%\item[DP buffer farm] configured with 1.4PB disk in 15 servers holding 16 disks each and 2x10GBE.~\cite{marteau}
+%\item[SP buffer farm] requires \fixme{XXX} TB distributed over
+%  \fixme{XXX} nodes with \fixme{XXX} bandwidth.  It is provided by
+%  \fixme{DUNE(?)}.
+%\end{description}
+
+%As described more in section~\ref{subsec:eosxferagent}, it is expected
+%that starting from the buffer farms the handling of the data from each
+%detector source will be symmetric in terms of what systems are
+%employed.  Other differences such as data rates, total volume, format
+%must be accommodated.
 
 \subsection{EOS and CASTOR}
 
@@ -113,7 +127,7 @@ data from both prototypes can be accommodated.
 \subsection{FNAL Ingest and Enstore}
 
 The protoDUNE raw data management system will assure the raw data
-files successfully reach Fermilab's transfer server.  Another system
+files successfully reach the FNAL transfer server.  Another system
 is expected to then assure the data is properly cataloged and archived
 to FNAL Enstore tape.  It is expected the same systems used for DUNE
 35t and other Fermilab-based experiments will be used.  Specifically
@@ -123,11 +137,10 @@ into the SAM databas and the file itself archived to Enstore.
 
 \section{Software Systems}
 
-\subsection{DAQ-BF Transfer systems}
+\subsection{Transfer of data from DAQ to the Buffer Farm}
 
 Raw data must be transferred from each detector DAQ to its respective
-BF disk storage.  The general requirements of the DAQ-BF transfer
-system are:
+duffer farm.  The general requirements for such transfer are:
 
 \begin{itemize}
 \item must scale to provide required level of throughput from DAQ to disk.
@@ -137,35 +150,31 @@ system are:
   can not accept new data from readout electronics.
 \end{itemize}
 
-The transfer systems for the two detectors may differ.  Current
+\noindent The transfer systems for the two detectors may differ.  Current
 understanding and recommendations are summarized:
 
 \begin{description}
-\item[dual-phase] The DP detector has selected BeeGFS~\cite{beegfs}
-  distributed, network file system for transferring data from DAQ to
-  buffer disks.  
+\item[dual-phase] NP02 has determined that XRootD~\cite{xrootd} and GPFS are the two candidates for buffer storage
+that are most likely to satisfy their needs. More R\&D is under way in this area.
 
-\item[single-phase] The SP detector requires development or adoption
-  of a transfer method.  It is recommended to evaluate the technology
-  adopted by DP and to evaluate XrootD~\cite{xrootd}
+\item[single-phase] NP04 will begin to evaluate XRootD~\cite{xrootd}.
 \end{description}
 
-It is with files appearing on the respective BF that the protoDUNE Raw
-Data Management (RDM) system takes over the provenance of the raw data
-files.
+\noindent In either case, RDMS will be responsible for transferring the raw data files out of the buffer farm,
+according to the data flow pattern in Fig.\ref{fig:flow} or a similar design.
 
-\subsection{Raw Data Management System}
+\subsection{RDMS as a state machine}
 
-The protoDUNE RDM system is based on the idea of each file progressing
-through a state machine of well defined states and explicit
+The protoDUNE RDMS is based on the idea of each file progressing
+through a \textit{state machine} of well defined states and explicit
 transitions between those states.  State transitions are enacted by a
 set of software agents.  The agent is required to perform an action
-based on the current state of a file as set in the central RDM
+based on the current state of a file as set in the central RDMS
 database and record the outcome of the transition in said database.
 
 Most agents will be written to perform a number of state transitions.
 Some may inject initial state based on external information (eg, a
-file appearing on a BF).  Other agents may merely monitor state
+file appearing on a buffer farm).  Other agents may merely monitor state
 changes.  Figure~\ref{fig:flow} describes one possible set of agents.
 As we learn more the set may grow with new functionality or splitting
 large agents into smaller ones.  These agents are described in
@@ -175,15 +184,12 @@ section~\ref{subsec:agents}.
 
 The database is required to:
 \begin{description}
-\item[performance] accept new records at a rate on order of 10Hz and
-  read-only queries an order of magnitude higher.
-\item[schema] full history of inserts (no update nor delete of a
-  previously inserted row), generate a unique identifier for each managed
+\item[performance] accept new records at a rate on order of up to 10Hz and   read-only queries an order of magnitude higher.
+
+\item[schema] full history of inserts (no update nor delete of a  previously inserted row), generate a unique identifier for each managed
   raw data file, relational associations to that ID.
 \end{description}
-The database is not directly exposed to agents but instead an Agent
-Interface (RDM AI) is provided as an HTTP ``web service'' API,
-described next
+The database is not directly exposed to agents but instead an Agent Interface (RDMS AI) is provided as an HTTP ``web service'' API, described next.
 
 
 \subsection{Agent Interface}
@@ -192,11 +198,13 @@ The only direct access to the database should be through the Agent
 Interface.  It is required to:
 \begin{itemize}
 \item present all database operations through a HTTP ``web service'' API.
+
 \item expose functionality required by all expected agents as described below.
+
 \item support and require authentication/authorization where needed.
 \end{itemize}
 
-All clients of the database shall use this interface, be they actually
+\noindent All clients of the database shall use this interface, be they actually
 effecting state changes or be they merely monitoring the state of the
 database.
 
@@ -207,7 +215,7 @@ Agents are expected to be command line programs or in some cases web
 applications.  In general, they are required to:
 
 \begin{itemize}
-\item access and authenticate to the RDM AI
+\item access and authenticate to the RDMS AI
 \item respect the allowed state transitions
 \item report back on the outcome
 \end{itemize}
@@ -218,7 +226,7 @@ applications.  In general, they are required to:
 \label{subsec:eosxferagent}
 
 The EOS Transfer Agent (ETA) is responsible for transferring files
-from the BFs to EOS and recording the results.  Some detail will be
+from the buffer farms to EOS and recording the results.  Some detail will be
 given here as a prototype for what must be given for all agents.
 
 \begin{figure}[h]
@@ -231,7 +239,7 @@ given here as a prototype for what must be given for all agents.
 Figure~\ref{fig:state} gives the state machine implemented by the ETA.
 This agent progresses sequentially through its possible states.  It
 begins by watching its BF for the appearance of a new file and when
-one appears it registers the file to the RDM DB via the AI that the
+one appears it registers the file to the RDMS DB via the AI that the
 file is in state \texttt{opened}.  When it determines the DAQ has
 finished writing the file this is registered as \texttt{closed} and a
 transfer to EOS is begun with the equivalent \texttt{transfer} state
@@ -241,7 +249,7 @@ recorded.  When the transfer successfully concludes the
 In addition to that behavior the ETA must
 \begin{itemize}
 \item be able to perform read and delete file operations on raw data
-  files from both detectors BF disk storage
+  files from both detectors buffer farm disk storage
 \item honor detector-specific policy regarding the timing of these
   file operations.
 \item able to produce copies of raw files on EOS
@@ -262,10 +270,10 @@ tape.  It is required that the CTA:
 
 The Purge Agent is responsible for deleting files when certain
 conditions are met, depending on the context of the file to purge.
-For example, BF files might only be purged after copied to EOS or they
+For example, the files residing in the Buffer Farm might only be purged after copied to EOS or they
 may be delayed until archived to CASTOR.  A differently configured
 Purge Agent may operate on files in EOS and purge based the file
-reaching some appropriate state in the RDM DB.
+reaching some appropriate state in the RDMS DB.
 
 \subsubsection{FNAL Transfer Agent}
 
@@ -280,14 +288,10 @@ Its continued management is taken over by systems at Fermilab.
 
 \section{Summary and Future}
 
-This report gives an outline for a design for a Raw Data Management
-system for DUNE single-phase and dual-phase prototype detectors.  It
-is based on agents enacting state changes on the files orchestrated by
-a central database.  There are still many unknowns and gaps in the
-design and it is expected that this document will be updated as the
-design matures.  The design still needs to be presented to experts in
-both SP and DP online, CERN and FNAL management and larger DUNE
-collaboration.
+This report gives an outline for a design for a Raw Data Management System for DUNE single-phase and dual-phase prototype detectors.
+It is based on agents enacting state changes on the files orchestrated by a central database.  There are still many unknowns and gaps in the
+design and it is expected that this document will be updated and new ones created as the design matures.
+
 
 
 \section{References}

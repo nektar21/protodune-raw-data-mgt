@@ -8,6 +8,7 @@ auto
 *.gz
 pdrdm.pdf
 protoDUNE-DMS-design.pdf
+spdf.pdf
 *.fdb_latexmk
 *.bbl
 *.blg
