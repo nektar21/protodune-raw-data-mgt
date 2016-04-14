@@ -106,9 +106,13 @@ system at CERN (the high-performance distributed disk storage) in the \pd raw da
 and architecture of the LHC experiments. EOS serves as the staging area from which the data gets committed to archival tape storage at
 CERN (CASTOR) and from which it is transmitted to a number of endpoints including principal data centers such as FNAL and others.
 It is also used to provide input to QA and other express processing streams at CERN (which fall into the ``prompt use'' category).
+Other comments:
+\begin{itemize}
+\item This diagram assumes that there is no difference between NP02 and NP04 in terms of the general pattern of data flow.
 
-Data centers at BNL and NERSC are placed in this diagram for illustration purposes only. Other institutions possessing adequate
+\item Data centers at BNL and NERSC are placed in this diagram for illustration purposes only. Other institutions possessing adequate
 resources can participate in this data distriburtion scheme if desired.
+\end{itemize}
 
 \subsection{Prioritization}
 
@@ -122,19 +126,24 @@ if the detector or certain system problems are identified in the QA process. The
 which implies a ``few minutes'' scale of processing.
 
 \section{Requirements}
+\subsection{Note on the file size}
+At the time of writing, the raw data file size is assumed to be 4\,GB.
+
 \subsection{DAQ Interface: buffering requirements}
 \label{sec:daq_interface}
 The plan is to have sufficient buffering capability in the DAQ for both NP02 and NP04. In this case, ``sufficient''
 primarily means conforming to the CERN requirement that the experiment must be able to keep taking data for a
 least 3 days at the nominal data rate, even if there is an occasional problem with the data link between the
 experiment site and CERN central storage facilities, or an issue with the central storage systems or any type of similar outage.
-At the time of writing, there are differences in how the two \pd experiments approach this:
+On top of that, NP02 has substantial additional requirements as explained below:
 \begin{description}
 
 \item[NP02] The planned buffer depth is rather large (petabyte scale), in order to enable a substantial amount of
-processing locally at the site of the experiment. To make this possible, design and plans exist to deploy the necessary
-computing resources (equivalent to hundreds of cores) in the data room of NP02. A number of options are being explored
-for the NP02 buffer storage solution, including GPFS and XRootD.
+processing locally at the site of the experiment, in accordance with the existing plans. To make this possible the design calls
+for deployment of the necessary computing resources (equivalent to hundreds of cores) in the data room of NP02. A number of options are being explored
+for the NP02  storage solution, including GPFS and XRootD.
+%Clearly this goes beyond the concept and functionality of a simple buffer as
+%it also needs to perform as a high-throughput staging area for local processing.
 
 \item[ NP04] Here the emphasis is on a more lightweight and fault tolerant setup which satisfies the general buffering and throughput requirements.
 No extensive processing is foreseen on the experiment site. Among the possible technical options for the buffer farm file access is XRootD.
@@ -144,7 +153,7 @@ No extensive processing is foreseen on the experiment site. Among the possible t
 It is this outer layer of the data acquisition system (the buffer) in each experiment that will need to be interfaced with
 the \pd raw data management complex.  It is represented as the block labeled ``buffer farm'' in Fig.\ref{fig:raw_concept}.
 
-It is important to note that -- as mentioned above -- NP02 and NP04 will use the ``buffer'' in two very different ways.  In NP02
+Let us note once again that NP02 and NP04 will use the ``buffer'' in two very different ways.  In NP02
 the storage local to the experiment will serve to host the data which will be subject to active processing at a considerable scale, likely
 simultaneously with the data taking.
 So in fact that storage element in NP02 has functionality which goes beyond that of a buffer (which is mostly the case in NP04)
@@ -215,10 +224,10 @@ Latency to reach express lane processing & 10\,min & 10\,min\\
 %\caption{\label{fig:dh_perf}Performance requirements for the data handling system used in the \pd experiment.}
 %\end{table}
 
-\section{Design}
+\section{Outline of the Design}
 
 
-\subsection{Fermilab File Transfer System}
+\subsection{The Fermilab File Transfer System}
 The design presented here leverages the technology of the Fermilab
 File Transfer System (F-FTS or just FTS), which has been successfully
 applied in a number of Intensity Frontier Experiments and demonstrated
@@ -611,8 +620,15 @@ for how you retrieve the file).
 
 The data management system for \pd will support, through its use the SAM tool suite,  data transfers to and from CERN,
 FNAL and other site’s storage elements using a combination of protocols supported by the specific site's storage resources.
-In particular the system will natively support the xrootd, gsiftp (gridftp), webdav(http), and srm protocols for access to EOS,
-Castor and dCache/Enstore (as appropriate).  The system can support multi-channel transfers and 3$^{rd}$ party transfers
+In particular the system will natively support the following protocols for access to EOS, Castor and dCache/Enstore (as appropriate):
+\begin{itemize}
+\item XRootD
+\item gsiftp (gridftp)
+\item webdav(http)
+\item srm
+\end{itemize}
+
+\noindent The system can support multi-channel transfers and 3$^{rd}$ party transfers
 using these protocols to achieve high bandwidth or low overhead transfers where needed.  The system also supports operations
 specific to local access methods on POSIX file systems.  
 
@@ -621,6 +637,16 @@ The file transport layer uses a modular design with an abstraction layer so that
 \section{Hardware Requirements}
 Specifications of the hardware required to implement the systems as described above will be developed at a later data, along with a more detailed
 design.
+
+\section*{Appendix}
+\subsection*{Glossary}
+\begin{description}
+\item{F-FTS} Fermilab File Transfer Service
+\item{NP02} The dual-phase part of the \pd program
+\item{NP04} The single-phase part of the \pd program
+\item{RDMS} Raw Data Management System
+\item{SAM} Metadata and File Catalog at FNAL, interfacing mass storage
+\end{description}
 
 
 \end{document}
