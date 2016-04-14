@@ -10,46 +10,51 @@
 \newcommand{\fixme}[1]{\textbf{FIXME: #1}}    
 
 
-\title{Required System Development for protoDUNE Raw Data Mangement\\
-(NOTE: draft proposed requirements, v0.3)}
+\title{Basic Requirements for the protoDUNE Raw Data Mangement System and its Possible Configuration}
 \date{\today}
-\author{M. Potekhin and B. Viren}
+\author{M. Potekhin$^a$ and B. Viren$^a$\\
+\ \\
+$^a$\textit{Brookhaven National Laboratory, Upton NY}
+}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-  The protoDUNE detectors (dual-phase NA02 and single-phase NA04)
-  require a number of systems in order to marshal raw data from
-  their respective DAQ to prompt processing and mass storage.  This
-  document provides an enumeration and high-level description of these
-  systems.
+The protoDUNE detectors (dual-phase NA02 and single-phase NA04)
+require a number of systems in order to marshal raw data from
+their respective DAQ to prompt processing and mass storage.  This
+document provides a high-level description of essnetial functionality and
+configuration of these systems.
 \end{abstract}
-
+\pagebreak
 \tableofcontents
 
 \pagebreak
 
-\section{Scope and Overview}
+\section{Introduction}
+\subsection{The role of the Raw Data Management System}
+This document sets forth a few requirements for a protoDUNE Raw Data Management System
+(which will be referred to as \textbf{RDMS} for brevity in this text).  The system will receive the raw data from
+two sources: Data Acquisition Systems for the NP02 Dual-Phase (DP) and NP04 Single-Phase (SP) DUNE prototype detectors.
+It will provide support for prompt (``express streams'' and other) processing.  It will marshal the data to mass storage, first
+to to the offline disk and then to the archive tape system at CERN. It will also transfer a copy to FNAL and potentially
+to a few other sites in the US and Europe for production and analysis.
 
-This document provides requirements for a protoDUNE Raw Data
-Management (RDM) system.  The system will receive the raw data from
-its two sources of the DAQs for the NP02 Dual-Phase (DP) and NP04
-Single-Phase (SP) DUNE prototype detectors.  It will provide support
-for prompt (``express lane'') processing.  It will marshal the data to
-offline disk and custodial archive storage at CERN and transfer a copy
-to Fermilab.  
-
-Figure~\ref{fig:flow} shows an overview of the expected systems that
-will be required.  The major hardware systems are:
+\subsection{Overview of the Data Flow}
+Fig.\ref{fig:flow} shows an overview of the systems that will be required.
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.8\textwidth]{flow.pdf}
-  \caption{Systems required for protoDUNE raw data management.  Red indicates systems where new development is needed.  Lined circles indicate disk and lined boxes indicate tape storage hardware systems.  Diamonds indicate software systems.  Solid arrows indicate flow of detector data, dotted arrows indicate flow of metadata and dashed indicates database queries.}
+  \includegraphics[width=0.75\textwidth]{flow.pdf}
+  \caption{Systems required for protoDUNE raw data management.}
   \label{fig:flow}
 \end{figure}
 
+\noindent
+In this diagram, red indicates systems where new development is needed.  Lined circles indicate disk and lined boxes indicate
+tape storage hardware systems. Diamonds indicate software systems.  Solid arrows indicate flow of detector data, dotted
+arrows indicate flow of metadata and dashed indicates database queries. In this scheme, the major hardware systems are:
 
 \begin{description}
 \item[Buffer Farms] each detector is expected to have a nearby and

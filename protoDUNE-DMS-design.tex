@@ -141,8 +141,16 @@ No extensive processing is foreseen on the experiment site. Among the possible t
 \end{description}
 
 \noindent
-It is this ``outer layer'' of the data acquisition system (the buffer) in either experiment that will need to be interfaced with
+It is this outer layer of the data acquisition system (the buffer) in each experiment that will need to be interfaced with
 the \pd raw data management complex.  It is represented as the block labeled ``buffer farm'' in Fig.\ref{fig:raw_concept}.
+
+It is important to note that -- as mentioned above -- NP02 and NP04 will use the ``buffer'' in two very different ways.  In NP02
+the storage local to the experiment will serve to host the data which will be subject to active processing at a considerable scale, likely
+simultaneously with the data taking.
+So in fact that storage element in NP02 has functionality which goes beyond that of a buffer (which is mostly the case in NP04)
+and serves as an active staging area for local processing. This has a number of consequences such as the need to plan
+for simulataneous read and write operations on the same storage system, taking place at a considerable rate.
+
 
 \subsection{Functional Requirements for Data Management}
 \label{sec:func_reqs}
