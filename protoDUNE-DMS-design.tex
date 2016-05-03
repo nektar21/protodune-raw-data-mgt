@@ -241,33 +241,43 @@ applied in a number of Intensity Frontier Experiments and demonstrated
 a high degree of robustness along with automation, integrated metadata
 and extensive monitoring capabilities.
 
-Figure~\ref{fig:ftsbasics} shows a cartoon of the basic functionality
+Fig.~\ref{fig:ftsbasics} shows a cartoon of the basic functionality
 of a single FTS instance.  A FTS instance is bound to one or more
-sources of input or ``dropboxes''.  A dropbox may be a POSIX-like file
+sources of input or ``dropboxes'', which it  periodically polls.
+As new files are discovered the FTS instance will initiate transfer of the file to its endpoints.
+Transfers may be handled directly by FTS or may be delegated to one of
+several $3^\mathrm{rd}$ party mechanisms, as schematically illustrated
+in  Fig. \ref{fig:ftsbasicsthird}.
+
+A dropbox may be a POSIX-like file
 system directory or a source of data accessed through a protocol layer
-(such as  XRootD, gridFTP etc).
+(such as  XRootD, gridFTP etc). 
 
 The lifetime of a file in a dropbox is under the control of the FTS
 instance.  A file must appear in a dropbox in an atomic manner
-(e.g. via the \texttt{mv} command) -- otherwise the producer
+(e.g. via the \texttt{mv} command). In all other respects the producer
 of a file runs independently from any FTS instance.  Depending on the
 nature of the dropbox, multiple file producers may provide input files.
 
-A FTS instance periodically polls its dropboxes, and as new files are
-discovered it will initiate transfer of the file to its endpoints.
-Transfers may be handled directly by FTS or may be delegated to one of
-several $3^\mathrm{rd}$ party mechanisms.  As described in
+
+
+As described in
 section~\ref{sec:cleanup}, the file is eventually removed from the
 dropbox by FTS.  Depending on the rules for cleanup, an opportunity
-exists for ad-hoc or other prompt processing of the data files while
-they reside in a dropbox.  Throughout these actions (discovery, transfer,
+exists for ad-hoc or other ``prompt processing'' of the data files while
+they reside in a dropbox. Fig.~\ref{fig:ftsbasics} includes a reference to the possible
+``prompt processing'' which for example may be required to enable
+near-time monitoring.
+
+Finally, throughout these actions (discovery, transfer,
 removal), a record of the state of the file is maintained in a SAM
 database (section~\ref{sec:sam}).
 
 \begin{figure}[tbh]
   \centering
   \includegraphics[width=0.8\textwidth]{fts-basics.pdf}
-  \caption{Basic functionality of an FTS instance with a single input dropbox.  An optional opportunistic processing of data while it resides in the dropbox is depicted.}
+  \caption{Basic functionality of an FTS instance with a single input dropbox.
+Prompt processing of the data while it resides in the dropbox depicted in this diagram is optional.}
   \label{fig:ftsbasics}
 \end{figure}
 
@@ -301,7 +311,7 @@ it makes possible prompt use of the files residing in EOS, as explained below.
 
 \begin{figure}[tbh]
   \centering
-  \includegraphics[width=0.8\textwidth]{ftsinstances.pdf}
+  \includegraphics[width=0.7\textwidth]{ftsinstances_v2.png}
   \caption{The two instances of FTS used for marshaling raw data from the protoDUNE detectors.}
   \label{fig:ftsinstances}
 \end{figure}
@@ -500,7 +510,7 @@ or an API that provides access to standard meta information regarding the storag
 (i.e. filenames, file size, create/modify times etc…)  Additionally the FTS will require a file read API for the purpose of metadata
 extraction from the file and for checksum computations (if not provided through some other means).  The system will require a
 delete API and privilege, if the automated cleanup options are desired/enabled.  If the DAQ storage elements support ``third party''
-transfer protocols, the FTS can use these to reduced overhead in performing the actual file transfer operations  (see Fig. \ref{fig:ftsbasicsthird}).
+transfer protocols, the FTS can use these to reduce overhead in performing the actual file transfer operations  (see Fig. \ref{fig:ftsbasicsthird}).
 
 The organization of the FTS dropbox area(s) will be configured to support the volume of data that would be generated during a
 sustained outage (of non-DAQ systems) of no less than 3 days plus the time required to register/process the volume of data
