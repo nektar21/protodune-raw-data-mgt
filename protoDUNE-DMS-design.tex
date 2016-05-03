@@ -31,7 +31,12 @@ The \pd experimental program is designed to test and validate the technologies a
 of the DUNE Far Detector at the Sanford Underground Research Facility (SURF).  The \pd detectors will be run in a dedicated beam line
 at the CERN SPS accelerator complex. The rate and volume of data produced by these detectors will be substantial and will require
 extensive system design and integration effort. We present a design option based on existing and successful technology developed at
-FNAL, the F-FTS.
+FNAL, the F-FTS. The principal drivers of this design are software and system reuse as well as sharing components between the single and
+double-phase experiments to the largest extent possible.
+\ 
+\\
+\\
+\noindent \textbf{THIS DOCUMENT IS WORK IN PROGRESS AND SUBJECT TO UPDATES AND CHANGES.}
 \end{abstract}
 \newpage
 \tableofcontents
@@ -108,7 +113,7 @@ CERN (CASTOR) and from which it is transmitted to a number of endpoints includin
 It is also used to provide input to QA and other express processing streams at CERN (which fall into the ``prompt use'' category).
 Other comments:
 \begin{itemize}
-\item This diagram assumes that there is no difference between NP02 and NP04 in terms of the general pattern of data flow.
+\item This diagram assumes that there is no conceptual difference between NP02 and NP04 in terms of the general pattern of data flow.
 
 \item Data centers at BNL and NERSC are placed in this diagram for illustration purposes only. Other institutions possessing adequate
 resources can participate in this data distriburtion scheme if desired.
@@ -126,8 +131,10 @@ if the detector or certain system problems are identified in the QA process. The
 which implies a ``few minutes'' scale of processing.
 
 \section{Requirements}
-\subsection{Note on the file size}
-At the time of writing, the raw data file size is assumed to be 4\,GB.
+\subsection{A Note on the File Size}
+At the time of writing, the raw data file size is assumed to be 5\,GB (nominally). A few metrics in the data management area depend of this
+parameter, for example the total number of files prodiced by the experiment, rate of file registration in the database etc. This can be adjusted
+later as needed and is only used here for estimation purposes.
 
 \subsection{DAQ Interface: buffering requirements}
 \label{sec:daq_interface}
@@ -275,8 +282,13 @@ database (section~\ref{sec:sam}).
 
 \subsection{FTS Instances}
 \label{sec:instances}
+\subsubsection{Overview}
+As mentioned in Sec.\,\ref{sec:daq_interface}, NP02 has requirements for the experiment-local storage that go beyond
+that of a simple buffer. For that reason, there will be differences between NP02 and NP04 in terms of placement and
+function of the system components.
 
-Two FTS instances will be used to marshal raw data from the protoDUNE
+\subsubsection{FTS in NP04}
+Two FTS instances will be used to marshal raw data from the single-phase protoDUNE (NP04)
 detectors in a manner presented in Fig.~\ref{fig:ftsinstances}.  The
 ``primary'' or FTS-1 instance is responsible for transferring data
 from the disk buffer farms to CERN's EOS (central distributed disk storage).
@@ -294,6 +306,10 @@ it makes possible prompt use of the files residing in EOS, as explained below.
   \label{fig:ftsinstances}
 \end{figure}
 
+\subsubsection{FTS in NP02}
+The Dual-Phase (NP02) will also rely on FTS to transfer data from EOS to tape and remote sites such as FNAL.
+So the block ``FTS-2'' in the diagram presented in the diagram in Fig.~\ref{fig:ftsinstances} will still be in place.
+However, the system to move the data from the experiment-local storage to EOS will be specified at a later date.
 
 \subsection{Express Streams and other ``Prompt Use''}
 \label{sec:prompt}
