@@ -160,7 +160,7 @@ No extensive processing is foreseen on the experiment site. Among the possible t
 It is this outer layer of the data acquisition system (the buffer) in each experiment that will need to be interfaced with
 the \pd raw data management complex.  It is represented as the block labeled ``buffer farm'' in Fig.\ref{fig:raw_concept}.
 
-Let us note once again that NP02 and NP04 will use the ``buffer'' in two very different ways.  In NP02
+In summary, NP02 and NP04 will use the ``buffer'' in two very different ways.  In NP02
 the storage local to the experiment will serve to host the data which will be subject to active processing at a considerable scale, likely
 simultaneously with the data taking.
 So in fact that storage element in NP02 has functionality which goes beyond that of a buffer (which is mostly the case in NP04)
@@ -284,7 +284,7 @@ Prompt processing of the data while it resides in the dropbox depicted in this d
 \begin{figure}[tbh]
   \centering
   \includegraphics[width=0.8\textwidth]{fts-basics-3rd.pdf}
-  \caption{Basic functionality of an FTS instance illustrating third-party transfers initiated by the instance.}
+  \caption{Basic functionality of an FTS instance which is capable of initiating third-party transfers.}
   \label{fig:ftsbasicsthird}
 \end{figure}
 
@@ -664,8 +664,10 @@ The file transport layer uses a modular design with an abstraction layer so that
 Specifications of the hardware required to implement the systems as described above will be developed at a later data, along with a more detailed
 design.
 
-\section*{Appendix}
-\subsection*{Glossary}
+\newpage
+\appendix
+\section{Appendix}
+\subsection{Glossary}
 \begin{description}
 \item{F-FTS} Fermilab File Transfer Service
 \item{NP02} The dual-phase part of the \pd program
@@ -674,5 +676,29 @@ design.
 \item{SAM} Metadata and File Catalog at FNAL, interfacing mass storage
 \end{description}
 
+\subsection{Outline of the NP02 online processing plans}
+\label{sec:np02_online_processing}
+\subsubsection{General Approach}
+The online processing will be sized in order to process all beam data produced at the nominal rate of 100\,Hz. 
+
+The idea is to disentangle $\sim$70 cosmic ray tracks overlapping each beam event in the $\pm$4ms around the beam trigger
+and to exploit the light readout information in order to reconstruct the real drift coordinates of these tracks.
+Then one or two tracks per event satisfying certain requirements such as track length and angle are selected for the monitoring and
+data QA tasks. The idea is to use them first for purity assessment and once the purity is determined to measure the gain in all
+channels. By accumulating information from many events the system can provide an online monitoring of the status of the detector
+and data quality. Also subject to monitoring will be some event parameters which are representative of the different kind of events and
+beam energies.
+% in order to check that the samples do not change with time during data taking.
+
+In the above the following assumptions are made which are based on a few known features of dual phase:
+\begin{itemize}
+\item easy reconstruction due to only two collection views and high signal-to-noise
+\item reasonable number of readout channels (7680)
+\item use of existing QSCAN software for fast reconstruction
+\item data compression factor of at least 10
+\end{itemize}
+
+\noindent This kind of online data treatment is  different with respect to what one would perform
+more generally offline. The use of the CERN batch system for this online analysis is not foreseen.
 
 \end{document}
