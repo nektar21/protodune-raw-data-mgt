@@ -87,8 +87,9 @@ the net effect is similar. The high digitization frequency in every channel (as 
 There are a few data reduction (compression) techniques that may be applicable to \pd raw data in order to reduce its size. Some of the algorithms
 are inherently lossy, such as the so-called \textit{Zero Suppression} algorithm which rejects parts of the digitized waveforms in LArTPC channels according
 to certain logic (e.g. when the signal is consistently below a predefined threshold for a period of time). There are also lossless compression
-techniques such as Huffman algorithm and others. At the time of writing it is assumed that only lossless algorithms will be applied to the compression
-of the \pd raw data.
+techniques such as Huffman algorithm and others. At the time of writing it is assumed that only the lossless algorithms will be applied
+during the compression
+of the \pd raw data, while zero suppression is considered a separate option that may be implemented when taking a portion of the data.
 
 It is foreseen that the total amount of data to be produced by the \pd detectors will be of the order of a few
 petabytes (including commissioning runs with cosmic rays). Instantaneous and average data rates in the data transmission chain are expected to be
@@ -111,13 +112,11 @@ system at CERN (the high-performance distributed disk storage) in the \pd raw da
 and architecture of the LHC experiments. EOS serves as the staging area from which the data gets committed to archival tape storage at
 CERN (CASTOR) and from which it is transmitted to a number of endpoints including principal data centers such as FNAL and others.
 It is also used to provide input to QA and other express processing streams at CERN (which fall into the ``prompt use'' category).
-Other comments:
-\begin{itemize}
-\item This diagram assumes that there is no conceptual difference between NP02 and NP04 in terms of the general pattern of data flow.
+This scheme assumes that there is no conceptual difference between NP02 and NP04 in terms of the general pattern of data flow.
 
-\item Data centers at BNL and NERSC are placed in this diagram for illustration purposes only. Other institutions possessing adequate
+Data centers at BNL and NERSC are placed in this diagram for illustration purposes. Any other institution possessing adequate
 resources can participate in this data distriburtion scheme if desired.
-\end{itemize}
+
 
 \subsection{Prioritization}
 
@@ -134,7 +133,7 @@ which implies a ``few minutes'' scale of processing.
 \subsection{A Note on the File Size}
 At the time of writing, the raw data file size is assumed to be 5\,GB (nominally). A few metrics in the data management area depend of this
 parameter, for example the total number of files prodiced by the experiment, rate of file registration in the database etc. This can be adjusted
-later as needed and is only used here for estimation purposes.
+later as needed and is used here primarily for estimation purposes.
 
 \subsection{DAQ Interface: buffering requirements}
 \label{sec:daq_interface}
@@ -146,24 +145,25 @@ On top of that, NP02 has substantial additional requirements as explained below:
 \begin{description}
 
 \item[NP02] The planned buffer depth is rather large (petabyte scale), in order to enable a substantial amount of
-processing locally at the site of the experiment, in accordance with the existing plans. To make this possible the design calls
+processing locally at the site of the experiment, in accordance with the existing plans (see~\ref{sec:np02_online_processing}).
+ To make this possible the design calls
 for deployment of the necessary computing resources (equivalent to hundreds of cores) in the data room of NP02. A number of options are being explored
 for the NP02  storage solution, including GPFS and XRootD.
 %Clearly this goes beyond the concept and functionality of a simple buffer as
 %it also needs to perform as a high-throughput staging area for local processing.
 
-\item[ NP04] Here the emphasis is on a more lightweight and fault tolerant setup which satisfies the general buffering and throughput requirements.
+\item[ NP04] In the single-phase experiment the emphasis is on a more lightweight and fault tolerant setup which satisfies the general buffering and throughput requirements.
 No extensive processing is foreseen on the experiment site. Among the possible technical options for the buffer farm file access is XRootD.
 \end{description}
 
 \noindent
 It is this outer layer of the data acquisition system (the buffer) in each experiment that will need to be interfaced with
-the \pd raw data management complex.  It is represented as the block labeled ``buffer farm'' in Fig.\ref{fig:raw_concept}.
+the rest of the \pd raw data management complex.  It is represented as the block labeled ``buffer farm'' in Fig.\ref{fig:raw_concept}.
 
 In summary, NP02 and NP04 will use the ``buffer'' in two very different ways.  In NP02
-the storage local to the experiment will serve to host the data which will be subject to active processing at a considerable scale, likely
-simultaneously with the data taking.
-So in fact that storage element in NP02 has functionality which goes beyond that of a buffer (which is mostly the case in NP04)
+the storage local to the experiment will serve to host the data which will be subject to active processing at a considerable scale
+and simultaneously with the data taking (i.e. effectively in real time).
+Thus the storage system in NP02 has functionality beyond that of a simple buffer (which is mostly the case in NP04)
 and serves as an active staging area for local processing. This has a number of consequences such as the need to plan
 for simulataneous read and write operations on the same storage system, taking place at a considerable rate.
 
@@ -204,10 +204,10 @@ and which the file handling system must accommodate on the assumption that they 
 \hline
 \hline
 Raw data volume (total)                    & 1.2\,PB & 2.5\,PB \\
-Raw data files (total)                      & 0.6\,M  & 1.2\,M\\
+Raw data files (total)                      & 240,000  & 500,000\\
 Avg. Data Rate                                & 20\,Gbps & 20\,Gbps \\
-Latency to reach EOS                     & 10\,min & 10\,min\\
-Latency to reach express lane processing & 10\,min & 10\,min\\
+%Latency to reach EOS                     & 10\,min & 10\,min\\
+%Latency to reach express lane processing & 10\,min & 10\,min\\
 \hline
 \end{tabular}
 \caption{\label{fig:det_perf}Expected protoDUNE performance characteristics.}
@@ -250,8 +250,10 @@ several $3^\mathrm{rd}$ party mechanisms, as schematically illustrated
 in  Fig. \ref{fig:ftsbasicsthird}.
 
 A dropbox may be a POSIX-like file
-system directory or a source of data accessed through a protocol layer
-(such as  XRootD, gridFTP etc). 
+system directory or a source of data accessed through a network protocol
+layer (such as  XRootD, gridFTP etc). The frequency at which the dropbox is
+polled is configurable and will be a component of the overall latency
+of the data transfer.
 
 The lifetime of a file in a dropbox is under the control of the FTS
 instance.  A file must appear in a dropbox in an atomic manner
@@ -263,13 +265,11 @@ nature of the dropbox, multiple file producers may provide input files.
 
 As described in
 section~\ref{sec:cleanup}, the file is eventually removed from the
-dropbox by FTS.  Depending on the rules for cleanup, an opportunity
+dropbox by the FTS.  Depending on the rules for cleanup, an opportunity
 exists for ad-hoc or other ``prompt processing'' of the data files while
 they reside in a dropbox. Fig.~\ref{fig:ftsbasics} includes a reference to the possible
 ``prompt processing'' which for example may be required to enable
-near-time monitoring.
-
-Finally, throughout these actions (discovery, transfer,
+near-time monitoring. Finally, throughout these actions (discovery, transfer,
 removal), a record of the state of the file is maintained in a SAM
 database (section~\ref{sec:sam}).
 
@@ -292,18 +292,18 @@ Prompt processing of the data while it resides in the dropbox depicted in this d
 
 \subsection{FTS Instances}
 \label{sec:instances}
-\subsubsection{Overview}
+\subsubsection{NP02 vs NP04}
 As mentioned in Sec.\,\ref{sec:daq_interface}, NP02 has requirements for the experiment-local storage that go beyond
-that of a simple buffer. For that reason, there will be differences between NP02 and NP04 in terms of placement and
-function of the system components.
+that of a simple buffer (see\,\ref{sec:np02_online_processing}). For that reason, there will be differences between NP02 and NP04 in terms of placement and
+function of the system components, as described in the following.
 
 \subsubsection{FTS in NP04}
 Two FTS instances will be used to marshal raw data from the single-phase protoDUNE (NP04)
 detectors in a manner presented in Fig.~\ref{fig:ftsinstances}.  The
-``primary'' or FTS-1 instance is responsible for transferring data
+``primary'' instance (labeled FTS-1) is responsible for transferring data
 from the disk buffer farms to CERN's EOS (central distributed disk storage).
- The ``secondary'' or FTS-2 instance is responsible for transferring files from EOS to
-CASTOR (tape), Fermilab and other receivers of the raw data set.
+ The ``secondary'' instance (FTS-2) is responsible for transferring files from EOS to
+CASTOR (tape), and also to FNAL and other recepients of the raw data set.
 
 This tiered approach is similar to the data flow pattern in the LHC experiments and achieves several goals,
 as outlined in Sec.\,\ref{sec:raw_concept}. In particular
@@ -317,9 +317,11 @@ it makes possible prompt use of the files residing in EOS, as explained below.
 \end{figure}
 
 \subsubsection{FTS in NP02}
-The Dual-Phase (NP02) will also rely on FTS to transfer data from EOS to tape and remote sites such as FNAL.
+NP02 will also rely on FTS to transfer data from EOS to tape and remote sites such as FNAL.
 So the block ``FTS-2'' in the diagram presented in the diagram in Fig.~\ref{fig:ftsinstances} will still be in place.
-However, the system to move the data from the experiment-local storage to EOS will be specified at a later date.
+However, the system to move the data from the experiment-local storage to EOS will be specified at a later date,
+and be subject to the requirement that there is minumum interference between the real-time processing
+taking place on site and data transfer to EOS.
 
 \subsection{Express Streams and other ``Prompt Use''}
 \label{sec:prompt}
@@ -334,7 +336,7 @@ An example of data flow is shown in Fig.~\ref{fig:prompt}.
 
 \begin{figure}[tbh]
   \centering
-  \includegraphics[width=0.6\textwidth]{prompt.pdf}
+  \includegraphics[width=0.5\textwidth]{prompt.pdf}
   \caption{Scenarios for prompt access and processing of raw data files.}
   \label{fig:prompt}
 \end{figure}
@@ -678,7 +680,6 @@ design.
 
 \subsection{Outline of the NP02 online processing plans}
 \label{sec:np02_online_processing}
-\subsubsection{General Approach}
 The online processing will be sized in order to process all beam data produced at the nominal rate of 100\,Hz. 
 
 The idea is to disentangle $\sim$70 cosmic ray tracks overlapping each beam event in the $\pm$4ms around the beam trigger
@@ -700,5 +701,10 @@ In the above the following assumptions are made which are based on a few known f
 
 \noindent This kind of online data treatment is  different with respect to what one would perform
 more generally offline. The use of the CERN batch system for this online analysis is not foreseen.
+
+In general, the data produced by the online processing system will not be saved to mass storage for presevation, with
+the exception of small subsets for purpose such as the online event display and others. Statistical information will be gathered by
+the monitoring software and saved from time to time.
+
 
 \end{document}
