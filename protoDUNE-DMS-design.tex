@@ -11,6 +11,7 @@
 \usepackage{lineno}
 
 \newcommand{\pd}{protoDUNE\ }
+\newcommand{\filesize}{5\,GB\ }
 
 \title{Design of the Data Management System for the \pd Experiment}
 \date{\today}
@@ -27,12 +28,14 @@ $^b$\textit{Fermi National Accelerator Laboratory, Batavia IL}}
 
 
 \begin{abstract}
-The \pd experimental program is designed to test and validate the technologies and design that will be applied to the construction
+\noindent The \pd experimental program is designed to test and validate the technologies and design that will be applied to the construction
 of the DUNE Far Detector at the Sanford Underground Research Facility (SURF).  The \pd detectors will be run in a dedicated beam line
 at the CERN SPS accelerator complex. The rate and volume of data produced by these detectors will be substantial and will require
 extensive system design and integration effort. We present a design option based on existing and successful technology developed at
 FNAL, the F-FTS. The principal drivers of this design are software and system reuse as well as sharing components between the single and
-double-phase experiments to the largest extent possible.
+double-phase experiments to the largest extent possible. While the proposed data management system will play an important role in
+production and other offline processing, the details of the latter are outside of the scope of the present document which focuses on
+the raw data management.
 \ 
 \\
 \\
@@ -57,12 +60,14 @@ of the eventual full detector (including the size).
 
 The ``single-phase''  LArTPC functions without amplification in the medium (liquid Argon) and is in essence a very large ionization chamber
 equipped with a large number of readout electrodes (wires), each with its own electronics chain. In this design, the front-end electronics is
-situated within the cryostat in order to minimize noise (the so-called ``cold electronics design''). In the ``dual-phase''  TPC ionization
+situated within the cryostat in order to minimize noise (the so-called ``cold electronics design'').
+
+In the ``dual-phase''  TPC ionization
 electrons are extracted from the liquid into the gaseous phase of Argon, and drift in Argon gas towards a specially designed 2D structure
 on top of the detector where they multiply according to principles of proportional chamber operation. The two designs are complementary
-in the sense they explore different approaches to optimization of the Liquid Argon detector characteristics.
-
-In December of 2015 the dual-phase prototype was given the official designation as a CERN experiment \textbf{NP02}, and the single-phase was
+in the sense they explore different technologie and approaches to optimization of the Liquid Argon detector characteristics.
+Two respective  proposals have been approved and the dual-phase prototype was given the official designation as a CERN experiment \textbf{NP02},
+while the single-phase was
 designated as \textbf{NP04}. Both are to be deployed at CERN in 2017 and scheduled to take data in 2018. The prototypes will be placed in a specially
 constructed large-scale extension of the existing experimental hall located in the CERN North Area. Each prototype will be provided a dedicated
 optical fiber network connection to the CERN central storage facilities located in the West Area campus of CERN. The nominal bandwidth of these
@@ -107,7 +112,9 @@ and transporting the data to sites external to CERN for processing (e.g. FNAL, B
 %%%%%%%%%%%%%%%%%%%%%%%%
 
 \noindent
-Conceptual diagram of the raw data flow in \pd is presented in Fig.\ref{fig:raw_concept}. It reflects the central role of the EOS
+Conceptual diagram of the raw data flow in \pd is presented in Fig.\ref{fig:raw_concept}. It shows the general logic
+of data flow, and does not include specific addumptions about what system will be used to actually move the data.
+It also reflects the central role of the EOS
 system at CERN (the high-performance distributed disk storage) in the \pd raw data management scheme. This is motivated by the experience
 and architecture of the LHC experiments. EOS serves as the staging area from which the data gets committed to archival tape storage at
 CERN (CASTOR) and from which it is transmitted to a number of endpoints including principal data centers such as FNAL and others.
@@ -126,12 +133,14 @@ limited time period (depending on the SPS and LHC running schedule).
 
 The priority components are the DAQ and the Raw Data Management System, which includes capturing the data coming out of the DAQ,
 transporting the data to persistent mass storage and prompt Quality Assurance which is required to ensure corrective action can be taken
-if the detector or certain system problems are identified in the QA process. The latter can be thought of as sophisticated monitoring done in near-time,
-which implies a ``few minutes'' scale of processing.
+if the detector or certain system problems are identified in the QA process. In NP02, major processing including QA will take place on a purpose-built
+storage and processing farm located in immediate proximity of the DAQ. In NP04, data samples will be processed for QA purposes on the CERN batch
+facility (and perpahs at FNAL if low latency can be achieved for data transmission). The latter can be thought of as sophisticated monitoring done in
+near-time, which implies a ``few minutes'' scale of processing.
 
 \section{Requirements}
 \subsection{A Note on the File Size}
-At the time of writing, the raw data file size is assumed to be 5\,GB (nominally). A few metrics in the data management area depend of this
+At the time of writing, the raw data file size is assumed to be \filesize (nominally). A few metrics in the data management area depend of this
 parameter, for example the total number of files prodiced by the experiment, rate of file registration in the database etc. This can be adjusted
 later as needed and is used here primarily for estimation purposes.
 
@@ -163,7 +172,7 @@ the rest of the \pd raw data management complex.  It is represented as the block
 In summary, NP02 and NP04 will use the ``buffer'' in two very different ways.  In NP02
 the storage local to the experiment will serve to host the data which will be subject to active processing at a considerable scale
 and simultaneously with the data taking (i.e. effectively in real time).
-Thus the storage system in NP02 has functionality beyond that of a simple buffer (which is mostly the case in NP04)
+It is obvious that the storage system in NP02 has functionality beyond that of a simple buffer (which is mostly the case in NP04)
 and serves as an active staging area for local processing. This has a number of consequences such as the need to plan
 for simulataneous read and write operations on the same storage system, taking place at a considerable rate.
 
@@ -192,8 +201,8 @@ given the expected data rates over the nominal two month running% (see table)
 \end{itemize}
 
 \noindent
-Table~\ref{fig:det_perf} contains performance measures driven by the expected extreme rates of each \pd detector
-and which the file handling system must accommodate on the assumption that they apply to both detectors.
+Table~\ref{fig:det_perf} contains a few basic metrics for each \pd detector
+and which the file handling system must accommodate.
 
 
 \begin{table}[tbh]
@@ -298,6 +307,7 @@ that of a simple buffer (see\,\ref{sec:np02_online_processing}). For that reason
 function of the system components, as described in the following.
 
 \subsubsection{FTS in NP04}
+\label{sec:prim_sec}
 Two FTS instances will be used to marshal raw data from the single-phase protoDUNE (NP04)
 detectors in a manner presented in Fig.~\ref{fig:ftsinstances}.  The
 ``primary'' instance (labeled FTS-1) is responsible for transferring data
@@ -330,7 +340,7 @@ While raw data files are available on EOS they can be
 used for a number of purposes, such as express streams and
 other prompt processing for monitoring and QA purposes,
 and also as data source for production taking place at CERN.
-Specifics of the latter have not been fully worked out at the time of writing
+Specifics of the latter have not been  worked out at the time of writing
 and will be one of the work areas prior to \pd commissioning.
 An example of data flow is shown in Fig.~\ref{fig:prompt}.
 
@@ -344,7 +354,7 @@ An example of data flow is shown in Fig.~\ref{fig:prompt}.
 %Prompt processing will be performed at CERN on a subset of the raw
 %data to support commissioning and ongoing data quality monitoring.
 
-Collaborators at universities or other institutions will have ad-hoc
+\noindent Collaborators at universities or other institutions will have ad-hoc
 access to the files while they are on CERN EOS via XRootD and other mechanisms if desired. 
 The data catalog (Sec.~\ref{sec:sam}) will be used to identify global file
 locations which will be resolved through the DUNE XRootD redirector or
@@ -355,18 +365,17 @@ the Open Science Grid.
 \label{sec:sam}
 
 Underlying FTS will be a fully featured data management layer
-implemented with Fermilab's Serial Access to Metadata (SAM) system.
+implemented with Fermilab's \textit{Serial Access to Metadata} (SAM) system.
 It will provide file metadata, fileset definitions and replica
 catalogs.  All data being handled by the transfer systems will have
 corresponding records in the data handling catalog so that the
 content, locations and provenance of the data can be fully tracked.
 The primary catalog systems will reside at FNAL with proxy/cache
-layers in the European and North American zones (see \ref{sec:replication}
+layers in Europe and North America (see \ref{sec:replication}
 for more details on data replication) to ensure high speed,
 low latency connections between the servers and the (offline analysis)
 clients that will query the catalogs from these zones.  Similar
-scalable proxy and cache layers can be instantiated for other
-identified zones as required.
+scalable proxy and cache layers can be instantiated in other regions as required.
 
 \subsection{Deletion and Cleanup}
 \label{sec:cleanup}
@@ -389,7 +398,7 @@ dropbox or to allow investigation of recent log files.
 
 \begin{figure}[tbh]
   \centering
-  \includegraphics[width=0.5\linewidth]{fts_file_deletion_flowchart.png}  
+  \includegraphics[width=0.55\linewidth]{fts_file_deletion_flowchart.png}  
   \caption{Flowchart of the \pd file deletion and cleanup.}
   \label{fig:ftscleanup}
 \end{figure}
@@ -413,10 +422,10 @@ This will be reflected in some of the estimates presented below.
 
 \subsection{Data Throughput}
 
-The data management system must perform in a way that allows for full exploitation of the underlying hardware and networking infrastructure
+The data management system must perform in a way that allows to fully leverage the underlying hardware and networking infrastructure
 upon which  it is running.  In the case of the \pd experiments the FTS system will be capable of operating at a sustained data processing and transfer
 rate that is greater than 80\% of the maximum theoretical bandwidth available between the DAQ buffer farms and the EOS storage system.
-In the current design this network bandwidth consists of two 20\,Gb/s ethernet links.
+In the current design this network bandwidth consists of two 20\,Gb/s ethernet links (one for each experiment).
 %  The RAID arrays or distributed file system architectures to which the data will be written to and read from are assumed
 % to have similar or lower available bandwidth.
 This sets the upper limit of the throughput of the entire system, with other components operating at this or perhaps lower levels.
@@ -431,15 +440,22 @@ of the buffer farms
 
 \subsection{Transaction Throughput}
 
-In terms of transaction handling,  the data management system must be capable of fully leveraging the data
+In terms of transaction handling,  the data management system must be capable of efficiently using the data
 catalog and infrastructure in order to meet or exceed the rate at which files or other data
 objects are generated by the \pd detectors amd their DAQ components.
 
-Given the nominal file size of 2\,GB (used here purely for estimation purposes), 
-the primary FTS system mist be able to support a minimum transaction rate of up to 1\,s$^{-1}$
+For NP04, where the data are captured in files and transmitted continuously to mass storage while
+the experiment is running, the following considerations are applicable to the transaction rate.
+Given the nominal file size of \filesize (nominal, used here for estimation purposes), 
+the primary FTS system mist be able to support a minimum transaction rate of up to  $\sim$1\,s$^{-1}$
 and the corresponding aggregated total of $\sim$10$^5$ file registration operations per day.
 This level of performance has been demonstrated in other deployments of this type of data
 handling system.
+
+In case of NP02, the data are not written to files continuously and rather there will be periods when
+select data samples are captured, registered in the file catalog and shipped out to mass storage.
+Since this use case is still subject to the nominal cap of 20\,Gbps bandwidth of the network connection
+to the CERN central services, the order of magnitude estimates are same as for NP02 in terms of transaction rate.
 
 \subsection{Transaction Tracking}
 The data management system must be able to perform simultaneous end-to-end tracking
@@ -458,24 +474,26 @@ In other words, $\sim$10\,k of the files are being actively
 managed and their status is constantly updated while the remainder are ``waiting'' in the designated dropbox location.
 
 \subsection{Transfer Latency}
-The file transfer and management systems are designed to operate in an asynchronous manner to other components of the \pd DAQ. 
-Due to the polling models employed in this asynchronous model, many operations do not have fixed temporal relations to other events in the DAQ system,
-but rather will occur/complete within a well defined time window or with a certain latency.  In the case of the \pd experiment,
+The file transfer and management systems are designed to operate asynchronously with other components of the \pd DAQ
+and other online systems.
+Due to the polling models employed in this asynchronous model, many operations do not have fixed temporal relations to other events in the DAQ,
+but rather will take place and complete within a well defined time window or with a certain latency.  In the case of the \pd experiment,
 the data management systems will be capable of operating as detailed below.
 
-In the primary FTS, the latency between the completion of the DAQ writing a file and the hand-off/detection of the file by the
+In FTS-1 (see\,\ref{sec:prim_sec}), the latency between the completion of the DAQ writing a file and the hand-off/detection of the file by the
 system will be controlled by a configurable delay parameter (in minutes) which defines the polling intervals for the FTS
-to look for ``new'' files in its input dropbox locations.  Under normal (steady state) operation, the average latency will be 1-2 polling intervals.
+to look for  incoming files in its input dropbox locations.  Under normal (steady state) operation, the average latency will be 1-2 polling intervals.
 The actual latency may be bigger depending on the number of other new or pending files currently in the system.
 In this case the order of file handling will be managed by an internal queuing algorithm that efficiently operates on the files but
 does provide any user specified prioritization.
 
-In the second stage of file transfers, the latency between when a file is generated by the DAQ and when it is transferred to the EOS
-system and then written/verified to archival media (via CASTOR) is dependent on first stage latencies (new file detection and file registration)
-and then the details of the archival storage system and its characteristics.  In particular the DAQ to EOS to CASTOR path will constitute a set
+In the second stage of file transfers (FTS-2, see\,\ref{sec:prim_sec}), the time lag between the points when a file is generated by the DAQ
+and when it is transferred to the EOS
+system and then written to archival media (via CASTOR) -- with verification --  is dependent on the first stage latencies (new file detection and file registration)
+and then the details of the archival storage system and its characteristics.  In particular the ``DAQ-to-EOS-to-CASTOR'' path will constitute a set
 of chained dependencies with an independent polling interval for each stage.  Under normal operating conditions that latency for the file to
 be transferred to EOS and be available through the data handling system is expected to be 1-2 of these polling cycles, contingent on write
-congestion in the EOS storage system.   For full registration of the files in Castor and onto type, the FTS/SAM systems will support latencies
+congestion in the EOS storage system.   For full registration of the files in CASTOR and onto tape, the FTS/SAM systems will support latencies
 in this recording of 3 hours to 30 days and will support a configurable timeout parameter to indicate failures in this transition.
 
 The latency between when files are written by the DAQ and when the files are available on storage in the North American zone,
@@ -521,7 +539,7 @@ that would be generated during the outage (i.e. ``the recovery time'' required t
 \subsection{The EOS Interface}
 The interface between the data handling system and the EOS storage system will be made through the APIs
 provided by the standard protocols already supported by both the EOS system and the SAM data handling system.
-In particular the xrootd protocol will be the primary API used for the interaction between the system, with secondary
+In particular the XRootD protocol will be the primary API used for the interaction between the system, with secondary
 support for the gridftp, webdav and srm protocol APIs.  The EOS system will be declared, and configured in the SAM
 system as a standard storage element and will have files stored on it registered and mapped within SAM the replica
 catalog to the well defined access URIs. 
@@ -587,7 +605,7 @@ as well as Fermi-SAM client utilities.
 \label{sec:replication}
 The data handling system must be able to manipulate multiple replicas of the data across storage systems and locations, in order
 to optimally utilize computing resources for production purposes, and make processed data readily available to researchers in
-a number of geographical areas.
+a number of geographical areas (or regions).
 %It will be necessary to replicate data files or data sets between sites or storage locations. 
 The data handling systems for \pd will handle this replication in different ways
 depending on geographic proximity and bandwidth.  At least two ``Primary Zones'' can be identified in order
@@ -663,8 +681,9 @@ specific to local access methods on POSIX file systems.
 The file transport layer uses a modular design with an abstraction layer so that new protocols or access methods can be added to the system without changes to the other interface layers.  The system can also select or prioritize the replica source location and access protocol based on destination characteristics (i.e. it can prefer a local cache copy of a file to a replica that is at a transatlantic location)  The system will also support offloading of transfers to 3rd party transport systems (e.g. WLCG FTS) to properly balance the resources of different WAN connections and site resources.
 
 \section{Hardware Requirements}
-Specifications of the hardware required to implement the systems as described above will be developed at a later data, along with a more detailed
-design.
+Specifications of the hardware required to implement the systems as described above will be developed at a later date, along with a more detailed
+design. It is anticipated that a few computers will be required to support the function of FTS instances at CERN. Regional proxies to support efficient operation
+of the SAM data catalogs will be placed in Europe and North America.
 
 \newpage
 \appendix
@@ -706,5 +725,7 @@ In general, the data produced by the online processing system will not be saved 
 the exception of small subsets for purpose such as the online event display and others. Statistical information will be gathered by
 the monitoring software and saved from time to time.
 
+Design of the data and workflow management required to make possible processing strategy outlined above is work in progress
+at the time of writing.
 
 \end{document}
