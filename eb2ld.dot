@@ -1,0 +1,40 @@
+digraph generic {
+	color=white;
+	rankdir=LR
+	splines=line
+	node[style=solid,fixedsize=true,label="",color=black,shape=circle,width=.7];
+	edge[color=gray];
+
+	eb1[label="EB",pos="1,3"];
+	hdd1[label="HDD1",shape=Mcircle];
+	hdd2[label="...",shape=Mcircle];
+	hdd3[label="HDDN",shape=Mcircle];
+	brnet1[shape=box,label="SATA\nBus",fixedsize=false,width=0];	
+	brnet2[shape=point,width=.02];
+	brnet3[shape=point,width=.02];
+	fts[label="FTS1",pos="3,3"];
+	{
+		rank=same;
+		eb1->brnet2[arrowhead=none,penwidth=2,color=black,constraint=false];
+	}
+	{
+		rank=same;
+		hdd1->hdd2->hdd3->brnet1[arrowhead=none,penwidth=2,color=black];
+	}
+	{
+		rank=same;
+		fts->brnet3[arrowhead=none,penwidth=2,color=black,constraint=false];
+	}
+	
+	eb1->hdd1;
+	eb1->hdd2;
+	eb1->hdd3;
+
+	hdd1->fts;
+	hdd2->fts;
+	hdd3->fts;
+	
+
+	brnet2->brnet1[arrowhead=none,penwidth=2,color=black];
+	brnet1->brnet3[arrowhead=none,penwidth=2,color=black];
+}
