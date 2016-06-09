@@ -26,6 +26,8 @@ Its personnel has expertise in networking and storage federation technology e.g.
 "flow" and "state", is an initial note evaluating basic design requirements.
 
 * The file spbf.tex is work in progress and will describe the Single-Phase protoDUNE Disk Buffer Farm
+* The file uoobf.tex is a document which explores a few different options for passing the data from the DAQ pipeline to storage and looks at issues such as event interlacing etc
+
 
 
 
