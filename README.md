@@ -1,6 +1,6 @@
 # Data Management for protoDUNE
 ## Overview
-This repository contains documents for a proposed raw data managment system for the protoDUNE detectors, which are scheduled to take data with CERN SPS beams in late 2018:
+This repository contains documents for a proposed raw data managment system and a few online components for the protoDUNE detectors, which are scheduled to take data with CERN SPS beams in late 2018:
 * NP02 - the dual-phase detector
 * NP04 - the single-phase detector
 
