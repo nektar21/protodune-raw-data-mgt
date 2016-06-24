@@ -15,7 +15,7 @@
 \newcommand{\fixme}[1]{\textbf{FIXME: #1}}    
 \newcommand{\pd}{ProtoDUNE\xspace}
 
-\title{Online Systems for \pd}
+\title{Online Systems for the Single-Phase \pd}
 \date{\today}
 \author{M.Potekhin, B. Viren}
 
@@ -386,6 +386,16 @@ CERN and a few significant sites in the US (such as FNAL, BNL and others) and do
 Managing the ``prompt processing'' streams is a subset of the wider issue of workload management, and outside of
 the scope of this document. It's worth noting however that a capable WMS with ability to distribute amd shift the
 workload between CERN and other Grid sites as necessary may prove essential for efficient operation of \pd.
+
+\section{Summary}
+ A few possible architectures of the online storage have been identified.
+Work is under way to create a framework (e.g. discrete-event simulation) needed to evaluate possible storage architectures
+with regard to bandwidth and potential bottlenecks, as well as most cost-effective configuration.
+Anticipated progress on the measurements plan (formulated by the respective WG) will allow
+to firm up the numbers and finalize the proposed hardware and middleware configurations.
+
+Preliminary scope of prompt processing (express streams) has been identified along with a rough estimate of the needed
+computing resources.
 
 \bibliography{citedb}
 
