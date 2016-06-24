@@ -79,9 +79,11 @@ The storage buffer is the primary system to which the DAQ will write its data.
 According to CERN rules and common practices, this buffer is essentialy local to the experiment
 (in contrast to the CERN campus where the central storage facilities are located) and is
 required to potentially cache as much as
-three days worth of nominal data acquisition.
-During nominal running it serves as a staging area for data transfer
-to CERN EOS disk system.
+three days worth of nominal data acquisition. One of the motivations is to ensure
+the ability of the experiment to run even with some network disruptions in the CERN area.
+During nominal running the buffer serves as a staging area for data transfer
+to CERN EOS disk system and effectively reduces coupling between various components of the
+data transfer system.
 
 According to the current plan, this transfer shall be performed by
 an instance of the Fermilab File Transfer System (called F-FTS or simply `` FTS'') deployed
@@ -289,7 +291,8 @@ it has the following consequences:
 
 \subsection{Sorted}
 
-This option requires an extra layer of \textit{Event Sorter} (ES) nodes.  These nodes must maintain
+Having events in data file in a perfectly serial (sorted) order is not a firm requirement at this point.
+However, such option is still being considered. It requires an extra layer of \textit{Event Sorter} (ES) nodes.  These nodes must maintain
 a buffer in memory of some number of events which can be as many as
 what an entire file holds.  However, this load can be spread across
 multiple ES nodes so that multiple events in multiple files need not
@@ -316,6 +319,14 @@ accomplished in an offline context.  The essential idea is that an
 offline process close to the source of the interlaced data files reads
 in multiple stream, performs deinterlacing and writes out sequential
 files.  This will be a highly I/O bound and data intensive job.
+
+\section{Software Provisioning for Online Systems}
+As mentioned above, the role of the online buffer is to give the experiment the capacity
+to run relatively autonomously, e.g. if the network connection to the main CERN campus
+goes down for a period of time. For the same reason, the online systems including the
+DAQ, online monitoring and elements of the data transfer system need to be able to operate
+using locally installed software. This therefore is among the design provisions.
+
 
 \section{From Online to Offline}
 
