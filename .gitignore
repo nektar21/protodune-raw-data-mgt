@@ -27,3 +27,9 @@ prompt.eps
 prompt.svg
 prompt.png
 uoob.pdf
+TB*.pdf
+
+*.nav
+*.snm
+*.vrb
+.webhook
