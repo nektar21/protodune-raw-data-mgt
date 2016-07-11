@@ -1,0 +1,7 @@
+digraph bp {
+	rankdir=LR;
+	daq[shape=box,label="DAQ"];
+	oob[shape=box,label="Online/Offline\nbuffer"];
+	eos[shape=cylinder,label="EOS"];
+	daq->oob->eos;
+}

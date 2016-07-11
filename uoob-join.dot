@@ -1,0 +1,48 @@
+digraph generic {
+
+	rankdir=LR
+	splines=line
+	node[style=solid,fixedsize=true,label="",color=black,shape=circle];
+	edge[color=gray];
+
+	subgraph cluster_uoobN {
+		label="UOO hostN";
+		
+		ebn[label="EBN"]
+		diskn[label="local\ndisk",shape=cylinder];
+		mdn[label="MetaN"];
+		ftsn[label="FTSN"];
+		
+	}
+
+	subgraph cluster_dotdot{
+		color=white
+		nothere1[style=invis];
+		dotdot[shape=none,label=". . ."];
+		nothere2[style=invis];
+		}
+
+	subgraph cluster_uoob1 {
+		label="UOO host1";
+		eb1[label="EB1"]
+		disk1[label="local\ndisk",shape=cylinder];
+		md1[label="Meta1"];
+		fts1[label="FTS1"];
+		
+	}
+
+	eos[shape=cylinder,label="EOS"];
+
+	eb1->disk1->fts1;
+	disk1->md1->disk1;
+
+	nothere1->dotdot->nothere2[style=invis];
+	nothere2->eos[style=invis];
+	
+	ebn->diskn->ftsn;
+	diskn->mdn->diskn;
+	
+	
+	fts1->eos;
+	ftsn->eos;
+}
