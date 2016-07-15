@@ -1,0 +1,91 @@
+\documentclass[pdftex,12pt,letter]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage[pdftex,pdfpagelabels,bookmarks,hyperindex,hyperfigures]{hyperref}
+
+\title{protoDUNE/SP Disk Buffer as Neut sub-cluster}
+\date{\today}
+\author{N. Benekos, M. Potekhin and B. Viren}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  This note describes the numbers and plan for using a portion of the
+  \texttt{neut} computer cluster for development, testing and potential
+  implementation of the single-phase protoDUNE disk buffer.  
+\end{abstract}
+
+\section{Numbers}
+
+The current ``data scenario''
+estimates\footnote{\href{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1086}{DocDB
+    1086-v7}} bracket an expected range of data rate and data volume
+coming from in-spill beam triggers and out-of-spill cosmic ray muon triggers.
+The scenarios at the ends of this range are named ``Central'' and ``High rate''.
+Two driving assumptions are the beam trigger rate and that one
+cosmic-ray muon trigger is acquired out-of-spill for every in-spill
+beam trigger.  
+
+\begin{description}
+\item[trigger] 25 -- 50 Hz
+\item[peak] 1.5 -- 3.0 GByte/sec (instantaneous during spill)
+\item[daily] 25 -- 50TB/day (just beam, $\times 2$ with cosmics)
+\item[3-day] 150 -- 300TB (total beam + cosmics)
+\end{description}
+
+\section{Concept}
+
+The \texttt{neut} cluster is now being formed using some 300 nodes in
+total reclaimed from ATLAS.  We will dedicate about 50 nodes in
+support of developing the disk buffer system for the single-phase
+protoDUNE detector adequately scaled for storing three days worth of
+expected data.  To label this sub-cluster we say
+``\texttt{neut-spbuf}''.  Initially \texttt{neut-spbuf} will be for
+developing and testing the buffer system design.  Meanwhile, we will
+explore what is needed to migrate \texttt{neut-spbuf} into actual
+operation.
+
+\section{Disk}
+
+The current \texttt{neut} nodes have very limited disk storage.  The
+\texttt{neut-spbuf} nodes must be upgraded to provide storage to meet
+the 3-day buffer requirement. To meet the ``High rate'' requirement we
+will install $2\times 3$TB SATA disks in each of the 50
+\texttt{neut-spbuf} nodes.
+
+\section{Networking}
+
+The ``High rate'' scenario requires sinking a peak of 3.0 GByte/sec
+(24 Gbps) throughput during the beam spill.  Between spills, when
+cosmic muon triggers are acquired, the throughput is somewhat reduced
+but we take 3.0 GByte/sec as our requirement.  Spread across the 50
+\texttt{neut-spbuf} nodes these streams this will approximately fill
+50\% of the existing 1Gbps NICs.  We expect similar multiplicity at
+the data production end (the Event Builder layer of the pD/SP DAQ).
+
+During initial testing we will request a 20 Gbps link between the
+current location of \texttt{neut}\footnote{CERN building 185} and
+central CERN computing including EOS and the pD/SP detector
+site\footnote{CERN building EHN1}.
+
+To supply this connectivity we require 50 switch ports at 1Gbps and
+(effectively) one switch port at 20Gbps.  Based on our current design
+it is possible to segment the network streams so that the total
+bandwidth is spread over multiple switches, for example two switches
+each with 25 ports at 1Gbps and 1 port with 10 Gbps.  One example
+switch is the Cisco SG500X-48P which can provide 48 1Gbps ports and
+ample ports on the high-bandwidth side.  One such switch is needed on
+the DAQ end of the 20Gbps link and one on the \texttt{neut-spbuf} end.
+
+
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

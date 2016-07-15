@@ -6,11 +6,11 @@
 
 \setbeamertemplate{navigation symbols}{}
 % \setbeamertemplate{background}[grid][step=1cm]
-
+\usepackage[printwatermark]{xwatermark}
 \usepackage{siunitx}
 \usepackage{xmpmulti}
 \usepackage[export]{adjustbox}
-
+\usepackage[normalem]{ulem}
 \usepackage[outline]{contour}
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, arrows}
@@ -24,6 +24,17 @@
 \renewcommand{\bvtitle}{\LARGE Online/Offline Buffer Options\\for protoDUNE/SP}
 \renewcommand{\bvevent}{}
 \renewcommand{\bvbeamerbackground}{}
+
+\newsavebox\mybox
+\savebox\mybox{\tikz[color=red,opacity=0.3]\node{MISTAKE};}
+\newwatermark*[
+  pagex={3},
+  angle=45,
+  scale=6,
+  xpos=-20,
+  ypos=15
+]{\usebox\mybox}
+
 
 \begin{document}
 \input{beamer/title.tex}
@@ -54,9 +65,10 @@
 
 
 \begin{frame}
+  % this one is marked "MISTAKE"
   \frametitle{Data Scenario Implications on Buffer}
 
-  Required to have \textbf{3 days buffer}.
+  Required to have \sout{3 days buffer} \textbf{\textcolor{red}{1 day buffer, no cosmics!}}.
 
   \begin{center}
     \includegraphics[height=1.5cm,clip,trim=0 10mm 0 10mm]{big-picture.pdf}
@@ -70,6 +82,28 @@
   Implications on \textbf{buffer requirements}
   \begin{itemize}
   \item 25-50TB buffer disk, 
+  \item 30-60 parallel HDD writes, 
+  \item 1.5-3.0 GByte/sec throughput.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Data Scenario Implications on Buffer}
+
+  Required to have \textbf{3 days buffer beam+cosmics}.
+
+  \begin{center}
+    \includegraphics[height=1.5cm,clip,trim=0 10mm 0 10mm]{big-picture.pdf}
+  \end{center}
+
+  Recent \textbf{upward revision} of \textit{Data Scenarios Spreadsheet}:
+  \begin{itemize}
+  \item \href{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1086}{DocDB 1086-v6} (let's put any and all updates here)
+  \item[$\rightarrow$] 25-50Hz, 5ms, 6APA, 2-4$\times$ compression, 25-50M events.
+  \end{itemize}
+  Implications on \textbf{buffer requirements}
+  \begin{itemize}
+  \item 135-270TB buffer disk, 
   \item 30-60 parallel HDD writes, 
   \item 1.5-3.0 GByte/sec throughput.
   \end{itemize}
