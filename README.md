@@ -5,18 +5,17 @@ This repository contains documents for a proposed raw data managment system and 
 ## Documents in this repository
 * *protoDUNE-DMS-design.tex is the MAIN document*. It describes a specific design of the data management system based on deployment and reuse of F-FTS, which is a data management system supported by FNAL.
 
-* pdrdm.tex and the two charts that go in it,
-"flow" and "state", is an initial note evaluating basic design requirements.
+* *pdrdm.tex* is an initial note evaluating basic design requirements.
 
-* spbf.tex is a stub for the document to describe testing the Single-Phase protoDUNE Disk Buffer Farm
+* *spbf.tex* is a stub for the document to describe testing of the Single-Phase protoDUNE Disk Buffer Farm
 
-* uoob.tex is a document which explores a few different options for passing the data from the DAQ pipeline to storage and looks at issues such as event interlacing etc
+* *uoob.tex* is a document which explores a few different options for passing the data from the DAQ pipeline to storage and looks at issues such as event interlacing etc
 
-* TB_online_June2016 is a report to the DUNE Technical Board
+* *TB_online_June2016* is a report to the DUNE Technical Board
 
-* neut-buffer.tex describes a concrete implementation of a xrootd storage cluster at CERN which is a candidate for the single-phase protoDUNE online buffer
+* *neut-buffer.tex* describes a concrete implementation of a xrootd storage cluster at CERN which is a candidate for the single-phase protoDUNE online buffer
 
-* the folder "figures" contains graphics to all of these documents
+* the folder *"figures"* contains graphics to all of these documents
 
 ## Built PDFs
 
