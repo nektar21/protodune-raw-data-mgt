@@ -20,16 +20,25 @@
 
 \begin{abstract}
 \noindent  This note describes the clustered storage
-solution for the online buffer of the Single-Phase \pd (experiment NP04).
-Basic data characteristics and quantitative parameters of such storage are estimated. \xrd is proposed as the underlying
+solution for the online buffer of the \pd (experiment NP04, Single-Phase LArTPC).
+Basic data characteristics and  parameters of such storage are estimated. \xrd is proposed as the underlying
 storage clustering technology. A portion of the existing   \textit{Neutrino Platform} computer cluster at CERN
-can potentially be utilized for the development, testing and  implementation of the NP04 online buffer.  
+can potentially be utilized for the development, testing and  implementation of the NP04 online buffer.  The reader
+is encouraged to peruse  references to DUNE DocDB for more detailed information on individual
+items included in this note.
 \end{abstract}
 
-\section{Data Characteristics}
+\section{Overview}
+\subsection{The online buffer}
+The online buffer must be provided to absorb the potentially high instantaneous (in-spill) data rate before transmission
+of data to mass storage and to satisfy the CERN requirement of providing 3 days worth of storage to make operation
+of the experiment possible in case of a network and/or central services outage. Combined with the projected data
+rate, this requirement determines the overall capacity of the buffer.
+
+\subsection{Data Characteristics}
 
 The current ``data scenario'' estimates \cite{docdb1086} bracket the expected range of data rate
-and data volume due to in-spill beam triggers and out-of-spill cosmic ray muon triggers.
+and data volume in \pd \cite{docdb186} due to in-spill beam triggers and out-of-spill cosmic ray muon triggers.
 For historical reasons, the scenarios at the ends of this range are named ``Central'' and ``High rate''.
 
 Two driving assumptions are the beam trigger rate and that one
@@ -42,6 +51,30 @@ beam trigger.  Below is the summary of principal data characteristics:
 \item[daily data volume] 25 -- 50TB
 \item[3-day buffer capacity] 150 -- 300TB
 \end{description}
+
+\subsection{F-FTS}
+Basic reqruirements for the system to handle the \pd raw data are presented in \cite{docdb1209}.
+The design which meets these requirements is outlined in \cite{docdb1212}. It leverages the
+Fermi File Transfer System (F-FTS) to perform two essential transfers:
+\begin{itemize}
+\item from the online buffer to CERN mass storage -- disk (EOS) and tape (CASTOR)
+\item from disk storage at CERN (EOS) to mass storage at FNAL and other US sites
+\end{itemize}
+
+\noindent It is foreseen that two distinct instances of F-FTS will be deployed to fill each
+respective role. F-FTS uses the Fermilab SAM system for file catalog and metadata functionality,
+and to keep track of the state of each transfer. In order to make use of this functionality, metadata
+needs to be created before F-FTS takes ownership of a particular file. Checksums also need to be
+generated to validate transfers throughout the chain of transmission. Computing the checksums
+as well as collecting the necesary metadata require both I/O bandwidth and CPU.
+
+Typically the F-FTS operates in the dropbox mode, whereby it detects the arrival of a new file
+according to configurable rules. It must therefore have a POSIX-like access to the file
+system which is under its watch. Alternatively, F-FTS can be triggered via a HTTP request
+from an external agent. The actual transfer can be handled by F-FTS itself (i.e. it works
+as a client) or by third-party tools.
+
+
 
 \section{Concept}
 
@@ -88,18 +121,24 @@ ample ports on the high-bandwidth side.  One such switch is needed on
 the DAQ end of the 20Gbps link and one on the \texttt{neut-spbuf} end.
 
 \begin{thebibliography}{1}
-
 \bibitem{docdb1086}
 {DUNE DocDB 1086: \textit{ protoDUNE/SP data scenarios with full stream (spreadsheet)}}\\
 \url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1086}
 
+\bibitem{docdb186}
+{DUNE DocDB 186: \textit{ ProtoDUNE Proposal}}\\
+\url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=186}
+
+
 \bibitem{docdb1209}
-{DUNE DocDB 1209: \textit{Design of the Data Management System for the protoDUNE Experiment}}\\
+{DUNE DocDB 1209: \textit{Basic Requirements for the protoDUNE Raw Data Mangement System}}\\
 \url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1209}
 
+
 \bibitem{docdb1212}
-{DUNE DocDB 1212: \textit{Basic Requirements for the protoDUNE Raw Data Mangement System}}\\
+{DUNE DocDB 1212: \textit{Design of the Data Management System for the protoDUNE Experiment}}\\
 \url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1212}
+
 
 
 \bibitem{xrootd}
