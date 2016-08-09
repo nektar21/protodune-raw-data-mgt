@@ -33,7 +33,15 @@ items included in this note.
 The online buffer must be provided to absorb the potentially high instantaneous (in-spill) data rate before transmission
 of data to mass storage and to satisfy the CERN requirement of providing 3 days worth of storage to make operation
 of the experiment possible in case of a network and/or central services outage. Combined with the projected data
-rate, this requirement determines the overall capacity of the buffer.
+rate, this requirement determines the overall capacity of the buffer. From the buffer, the data needs to be delivered to
+the disk storage (EOS) located at the CERN central services.
+The place of the buffer in the data transmission chain therefore can be visualized as in Fig.\,\ref{fig:big-picture}.
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/big-picture.pdf}
+  \caption{Place of the buffer in the data transmission chain.}
+  \label{fig:big-picture}
+\end{figure}
 
 \subsection{Data Characteristics}
 
@@ -57,12 +65,21 @@ Basic reqruirements for the system to handle the \pd raw data are presented in \
 The design which meets these requirements is outlined in \cite{docdb1212}. It leverages the
 Fermi File Transfer System (F-FTS) to perform two essential transfers:
 \begin{itemize}
-\item from the online buffer to CERN mass storage -- disk (EOS) and tape (CASTOR)
-\item from disk storage at CERN (EOS) to mass storage at FNAL and other US sites
+\item from the online buffer to CERN mass disk storage (EOS)
+\item from EOS to CERN tape (CASTOR) and  mass storage at FNAL and other US sites
 \end{itemize}
 
 \noindent It is foreseen that two distinct instances of F-FTS will be deployed to fill each
-respective role. F-FTS uses the Fermilab SAM system for file catalog and metadata functionality,
+respective role. This is schematically illustrated in Fig.\,\ref{fig:ftsinstances},
+
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/ftsinstances_v2.png}
+  \caption{The two instances of FTS used for marshaling raw data from protoDUNE.}
+  \label{fig:ftsinstances}
+\end{figure}
+
+ \noindent F-FTS uses the Fermilab SAM system for file catalog and metadata functionality,
 and to keep track of the state of each transfer. In order to make use of this functionality, metadata
 needs to be created before F-FTS takes ownership of a particular file. Checksums also need to be
 generated to validate transfers throughout the chain of transmission. Computing the checksums
@@ -73,6 +90,13 @@ according to configurable rules. It must therefore have a POSIX-like access to t
 system which is under its watch. Alternatively, F-FTS can be triggered via a HTTP request
 from an external agent. The actual transfer can be handled by F-FTS itself (i.e. it works
 as a client) or by third-party tools.
+
+\section{The online buffer}
+\subsection{Attached vs Clustered Storage}
+Any data taking scenario currently under consideration requires sustained rate
+of data to disk in hundreds of MB per second. In practice this means that
+multiple hard drives are needed to absorb such rate and have enough headroom
+for stable operation of the system.
 
 
 
