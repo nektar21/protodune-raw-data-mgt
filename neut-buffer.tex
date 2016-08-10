@@ -22,20 +22,20 @@
 \noindent  This note describes the clustered storage
 solution for the online buffer of the \pd (experiment NP04, Single-Phase LArTPC).
 Basic data characteristics and  parameters of such storage are estimated. \xrd is proposed as the underlying
-storage clustering technology. A portion of the existing   \textit{Neutrino Platform} computer cluster at CERN
-can potentially be utilized for the development, testing and  implementation of the NP04 online buffer.  The reader
-is encouraged to peruse  references to DUNE DocDB for more detailed information on individual
+storage clustering technology. It is suggested that among other options, a portion of the existing   \textit{Neutrino Platform}
+computer cluster at CERN could potentially be utilized for the development, testing and actual implementation of the NP04 online buffer. 
+The reader is encouraged to peruse references to DUNE DocDB provided in the text for more detailed information on individual
 items included in this note.
 \end{abstract}
 
 %%%%%%%%%%%%%
 \section{Overview}
 \subsection{The online buffer}
-The online buffer must be provided to absorb the potentially high instantaneous (in-spill) data rate before transmission
-of data to mass storage and to satisfy the CERN requirement of providing 3 days worth of storage to make operation
-of the experiment possible in case of a network and/or central services outage. Combined with the projected data
-rate, this requirement determines the overall capacity of the buffer. From the buffer, the data needs to be delivered to
-the disk storage (EOS) located at the CERN central services.
+The online buffer of the NP04 experiment must be put in place to absorb the potentially high instantaneous (in-spill) DAQ
+data rate before transmission of raw data to mass storage. It is also needed to satisfy the CERN requirement of providing
+3 days worth of storage to make operation of the experiment possible in case of a network and/or central services outage.
+Combined with the projected data rate, this requirement determines the overall capacity of the buffer. From the buffer,
+the data needs to be delivered to the high-performance  disk storage (EOS) located at the CERN central services.
 The place of the buffer in the data transmission chain therefore can be visualized as in Fig.\,\ref{fig:big-picture}.
 \begin{figure}[tbh]
   \centering
@@ -46,20 +46,32 @@ The place of the buffer in the data transmission chain therefore can be visualiz
 
 \subsection{Data Characteristics}
 
-The current ``data scenario'' estimates \cite{docdb1086} bracket the expected range of data rate
+The current estimates \cite{docdb1086} bracket the expected range of data rate
 and data volume in \pd \cite{docdb186} due to in-spill beam triggers and out-of-spill cosmic ray muon triggers.
-For historical reasons, the scenarios at the ends of this range are named ``Central'' and ``High rate''.
-
-Two driving assumptions are the beam trigger rate and that one
-cosmic-ray muon trigger is acquired out-of-spill for every in-spill
-beam trigger.  Below is the summary of principal data characteristics:
-
-\begin{description}
-\item[trigger rate] 25 -- 50 Hz
-\item[peak data rate (DAQ internal)] 1.5 -- 3.0 GByte/sec (instantaneous during spill)
-\item[daily data volume] 25 -- 50TB
-\item[3-day buffer capacity] 150 -- 300TB
-\end{description}
+For historical reasons, the scenarios on the opposite sides of the bracket are named ``Central'' and ``High rate''.
+There are two main assumptions which drive the expected data rate:
+\begin{itemize}
+\item the beam trigger rate as per the run plan
+\item the requirement that a cosmic-ray muon trigger is acquired out-of-spill for every in-spill beam trigger; this is due to
+the calibration plan currently in the works and whose details are out of the scope of this document and subject to
+further R\&D
+\end{itemize}
+\noindent Below is the summary of the principal data characteristics in \pd:
+\begin{table}[tbh]
+\centering
+\begin{tabular}{l l}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\hline
+trigger rate				& 25 -- 50 Hz \\
+peak data rate (DAQ internal, instantaneous during spill)	& 1.5 -- 3.0 GB/s \\
+daily data volume &  25 -- 50TB \\
+3-day buffer capacity & 150 -- 300TB \\
+\hline
+\end{tabular}
+\caption{\label{tab:data_char}Expected protoDUNE data characteristics.}
+\end{table}
 
 \subsection{F-FTS}
 Basic reqruirements for the system to handle the \pd raw data are presented in \cite{docdb1209}.
