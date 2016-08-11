@@ -30,7 +30,8 @@ items included in this note.
 
 %%%%%%%%%%%%%
 \section{Overview}
-\subsection{The online buffer}
+\subsection{The Role of the Online Buffer}
+\label{sec:the_role}
 The online buffer of the NP04 experiment must be put in place to absorb the potentially high instantaneous (in-spill) DAQ
 data rate before transmission of raw data to mass storage. It is also needed to satisfy the CERN requirement of providing
 3 days worth of storage to make operation of the experiment possible in case of a network and/or central services outage.
@@ -64,10 +65,10 @@ further R\&D
 \textbf{Metric} & \textbf{Value} \\
 \hline
 \hline
-trigger rate				& 25 -- 50 Hz \\
-peak data rate (DAQ internal, instantaneous during spill)	& 1.5 -- 3.0 GB/s \\
-daily data volume &  25 -- 50TB \\
-3-day buffer capacity & 150 -- 300TB \\
+trigger rate				& 25 -- 50 Hz \\  \hline
+peak data rate (DAQ internal, instantaneous during spill)	& 1.5 -- 3.0 GB/s \\ \hline
+daily data volume &  25 -- 50TB \\ \hline
+3-day buffer capacity & 150 -- 300TB \\  \hline
 \hline
 \end{tabular}
 \caption{\label{tab:data_char}Expected protoDUNE data characteristics.}
@@ -83,7 +84,8 @@ Fermi File Transfer System (F-FTS) to perform two essential transfers:
 \end{itemize}
 
 \noindent It is foreseen that two distinct instances of F-FTS will be deployed to fill each
-respective role. This is schematically illustrated in Fig.\,\ref{fig:ftsinstances},
+respective role. This is schematically illustrated in Fig.\,\ref{fig:ftsinstances}. The ``SP Disk
+Buffer Farm'' in this diagram corresponds to the NP04 online buffer.
 
 \begin{figure}[tbh]
   \centering
@@ -95,27 +97,54 @@ respective role. This is schematically illustrated in Fig.\,\ref{fig:ftsinstance
  \noindent F-FTS uses the Fermilab SAM system for file catalog and metadata functionality,
 and to keep track of the state of each transfer. In order to make use of this functionality, metadata
 needs to be created before F-FTS takes ownership of a particular file. Checksums also need to be
-generated to validate transfers throughout the chain of transmission. Computing the checksums
+generated to validate transfers throughout the chain of transmission and are typically considered
+a part of the file metadata. Computing the checksums
 as well as collecting the necesary metadata require both I/O bandwidth and CPU.
 
 Typically the F-FTS operates in the dropbox mode, whereby it detects the arrival of a new file
-according to configurable rules. It must therefore have a POSIX-like access to the file
-system which is under its watch. Alternatively, F-FTS can be triggered via a HTTP request
+according to configurable rules (e.g. filename patterns). In this mode, it must have a POSIX-like access to the file
+system which is under its watch. Alternatively, F-FTS can be triggered via a HTTP POST request
 from an external agent. The actual transfer can be handled by F-FTS itself (i.e. it works
-as a client) or by third-party tools.
+as a client) or by third-party tools. The state of the transfer is registered in SAM
+and recovery mechanisms are available to ensure a robust transfer.
 
-\section{The online buffer}
+\section{Design of the Online Buffer}
+\subsection{The Event Builders as the ``DAQ boundary''}
+The Liquid Argon TPC  and a photon detector subsystem in \pd are read out by means of
+computing elements called ``board readers''. Each reader gets data from a portion of the detector,
+and each triggered event must be assembled separately from fragments of the data. This function
+is performed by the Event Builders, as schematically shown in Fig.\,\ref{fig:upstream}.
+
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/upstream.pdf}
+  \caption{Conceptual diagram of the data flow within DAQ, from the detector to the Event Builders.}
+  \label{fig:upstream}
+\end{figure}
+\noindent Orchestration of data flow from the Board Readers to Event Builders can be done in a number
+of ways, and the current working assumption is that this will be implemented as a standard round-robin
+configuration. More sophisticated load-balancing algorithms are alse being considered. As the name suggests,
+the Event Builders create a complete data record in memory for each triggered event (readout period),
+which then must be persisted in storage. It is optimal that  this storage also serves as the online buffer 
+ which needs to be a part of the system (\ref{sec:the_role}), since otherwise an additional transfer proxedure
+to a different storage device would need to be implemented and managed.
+
 \subsection{Attached vs Clustered Storage}
-Any data taking scenario currently under consideration requires sustained rate
-of data to disk in hundreds of MB per second. In practice this means that
+Any \pd data taking scenario currently under consideration requires sustained rate
+of ``data to disk'' in hundreds of MB per second. In practice this means that
 multiple hard drives are needed to absorb such rate and have enough headroom
 for stable operation of the system.
 
-
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/doob-join.pdf}
+  \caption{Conceptual diagram of the Event Builders interfacing the XRootD cluster.}
+  \label{fig:doob-join}
+\end{figure}
 
 \section{Concept}
 
-The \texttt{neut} cluster is now being formed using some 300 nodes in
+The \texttt{neut} cluster is now being formed using about 350 nodes in
 total reclaimed from ATLAS.  We will dedicate about 50 nodes in
 support of developing the disk buffer system for the single-phase
 protoDUNE detector adequately scaled for storing three days worth of
