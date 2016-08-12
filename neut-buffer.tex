@@ -109,7 +109,7 @@ as a client) or by third-party tools. The state of the transfer is registered in
 and recovery mechanisms are available to ensure a robust transfer.
 
 \section{Design of the Online Buffer}
-\subsection{The Event Builders as the ``DAQ boundary''}
+\subsection{The Event Builders}
 The Liquid Argon TPC  and a photon detector subsystem in \pd are read out by means of
 computing elements called ``board readers''. Each reader gets data from a portion of the detector,
 and each triggered event must be assembled separately from fragments of the data. This function
@@ -126,7 +126,7 @@ of ways, and the current working assumption is that this will be implemented as 
 configuration. More sophisticated load-balancing algorithms are alse being considered. As the name suggests,
 the Event Builders create a complete data record in memory for each triggered event (readout period),
 which then must be persisted in storage. It is optimal that  this storage also serves as the online buffer 
- which needs to be a part of the system (\ref{sec:the_role}), since otherwise an additional transfer proxedure
+ which needs to be a part of the system in any case (\ref{sec:the_role}), since otherwise an additional transfer procedure
 to a different storage device would need to be implemented and managed.
 
 \subsection{Attached vs Clustered Storage}
@@ -137,7 +137,7 @@ for stable operation of the system.
 
 \begin{figure}[tbh]
   \centering
-  \includegraphics[width=0.7\textwidth]{figures/doob-join.pdf}
+  \includegraphics[width=0.5\textwidth]{figures/doob-join.pdf}
   \caption{Conceptual diagram of the Event Builders interfacing the XRootD cluster.}
   \label{fig:doob-join}
 \end{figure}
