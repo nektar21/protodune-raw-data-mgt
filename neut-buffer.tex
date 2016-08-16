@@ -24,7 +24,7 @@
 solution for the online buffer for the CERN experiment NP04 which include the single-phase protoDUNE LArTPC detector (\pdsp).
 Basic data characteristics and  parameters of such storage are estimated. \xrd is proposed as the underlying
 storage clustering technology. It is suggested that a portion of the existing   \textit{Neutrino Platform}
-computer cluster at CERN (``neut'') be utilized for the development, testing and actual implementation of the NP04 online buffer. 
+computer cluster at CERN (``\texttt{neut}'') be utilized for the development, testing and actual implementation of the NP04 online buffer. 
 \end{abstract}
 
 %%%%%%%%%%%%%
@@ -172,94 +172,167 @@ naturally leverages the parallelism of multiple Event Builders.
 % and offers transparency for the DAQ developers since it is just a local file system.
 However, it also has disadvantages:
 \begin{itemize}
-\item The transfer agents (F-FTS in the current design) will need to run on each and every EB node. The additional load
-due to these processes will depend on the content of the metadata which needs to be produced before the
-transfer is actuated, and methods of its gathering (e.g. whether external run conditions database needs to be queried etc).
-
-\item Storage space would be effectively split among individual nodes which could make management of the buffer more difficult.
+\item An F-FTS instance would need to run on each EB host which adds configuration complexity.
+\item The direct association between one EB and its disks removes the ability to load balance the storage.
+\item The EB hosts must directly communicate with central CERN services (EOS, in particular).
+\item Failures in the buffering functionality added to an EB node directly leads to impact on the DAQ as a whole.
 \end{itemize}
 
-\noindent The file-level clustered storage such as based on \xrd \cite{xrootd} does require additional nodes thus increasing the cost of the system.
-At the same time, it offers the following advantages
+To counter these problems and to provide the following
+benefits we will pursue a decoupled, file-level clustered storage
+design based on \xrd\cite{xrootd}.  
+
+\subsection{\xrd Storage Cluster}
+
+The buffer will be provided as an \xrd storage cluster. With the
+current rate estimations it will require the following components:
+
 \begin{itemize}
-\item Storage is exposed to its clients as an integral entity as opposed to a number of separate HDDs, and sharing of files over the network
-becomes trivial. Integration with ROOT may provide additional convenience to the developers.
-
-\item It provides additional ways to balance the load on the disk drives.
-
-\item Functions related to creation of metadata, checksum etc can now reside in the storage cluster, thus reducing
-the load on the Event Builders.
-
-\item Certain features of \xrd  greatly facilitate application development, for example callbacks can be created for various
-file operations which is very useful for integration with FTS and other components of the data handling system.
+\item Approximately 50 host computers, each with one Gbps NIC and two 3 TB HDD.
+\item Network switch sufficient to connect the nodes with the DAQ LAN
+  and the greater CERN network (discussed more below).
 \end{itemize}
 
-\noindent Interaction of the Event Builders with a \xrd storage cluster is schematically shown in Fig.\,\ref{fig:doob-join}.
+% rates, and prove it all hangs together
+\noindent Under the ``High rate'' scenario the data rate during the
+spill be 0.5 Gbps into each of the 50 hosts and 30 MByte/sec into each
+HDD.  We assume each HDD can accept a sustained writing rate of
+50~MByte/sec.  During the off-spill time, the cosmic muon trigger
+produces about 0.2 Gbps into each host.  Over the entire beam cycle,
+each host will receive about 540 MB.  If we assume this is read back
+(in order to transfer to EOS) only during the off-spill time it
+represents a 0.25~Gbps flow from HDD to network.  We expect this read
+to coexist with the contemporaneous write of cosmic data.
 
-\begin{figure}[tbh]
-  \centering
-  \includegraphics[width=0.5\textwidth]{figures/doob-join.pdf}
-  \caption{Conceptual diagram of the Event Builders interfacing the XRootD cluster.}
-  \label{fig:doob-join}
-\end{figure}
+% software stuff:
+All host computers in the cluster are effectively identical in terms
+of hardware, operating system and available software.  One node will
+be given special configuration.  Instead of providing clustered
+storage it will run the \xrd ``redirector'' as well as the instance of
+F-FTS.
+
+This design counters the problems with the alternatives that were
+addressed above and it provides these additional benefits:
+
+\begin{itemize}
+\item Files are identified and located under a single namespace when
+  accessed through the \xrd redirector.  Communicating an \xrd
+  ``\texttt{root://} URL to the DAQ team is to a large extent the only
+  ``interface'' between DAQ and this buffer system.  Similarly,
+  operations by F-FTS need not be aware of any of the complexity of
+  internal storage units.
+\item Storage balancing and robustness against disk or host failure is
+  ensured by \xrd.  A lost element does not render the buffer useless.
+  Even if the redirector is lost, a storage node can be reconfigured
+  to take on the task.
+\item The \xrd event handling feature will be exploited to implement
+  the ``push'' notification of F-FTS describe above.  It may also be
+  used to execute the metadata file production process (if this task
+  is not handled by the EB).
+\end{itemize}
+
+\subsection{An Extra Layer}
+
+As described above, this design requires and extra ``layer'' of 50
+hosts.  Depending on how we move into production, this additional cost
+is in reality minimum and in any event is ameliorated by some benefits.
+
+\begin{itemize}
+\item We have the existing ``\texttt{neut}'' cluster (described more
+  below) which provides hosts of almost adequate specification.  They
+  initially lacked sufficient HDD which are currently being provisioned.
+\item \xrd CPU requirements are almost negligible leaving a large
+  fraction of the cluster available for the inevitable last minute
+  change in requirements or to offload tasks (such as metadata file
+  production) from the DAQ.
+\item Defining the boundary of this subsystem at the network allows
+  for development and debugging which is decoupled from DAQ and to
+  some extent F-FTS.
+\item The overall design is simpler and requires less custom
+  development than the ``Attached'' solution.
+\item The design is based on Free Software and commodity hardware both
+  of which is well understood in the community.
+\end{itemize}
+
+\subsection{1 Gbps vs 10 Gbps}
+
+A crucial decision in the design is the bandwidth of the storage
+hosts.  The two reasonable extremes are 1 vs 10 Gbps.  The arguments
+for 1 Gbps are:
+
+\begin{itemize}
+\item 1 Gbps NIC is commodity, 10 Gbps is available but not commonly default.
+\item 10 Gbps implies $\times 10$ more HDD in each box and the
+  supporting components (hardware array, more RAM).  This is tempered
+  by requiring only $\sim 5$ hosts.
+\item \xrd has very low CPU requirements, and even at the scale of 5
+  hosts, many cores will be left idle and available, but still fewer
+  than in the 50 host case.
+\item Maybe most importantly, we have now in hand 50 nodes from the
+  ``\textbf{neut}'' cluster which has in total $\sim 350$ nodes which
+  potentially can serve as spares.  These all have 1 Gbps and 2 HDD
+  bays.
+\end{itemize}
+
+
+
+% \noindent Interaction of the Event Builders with a \xrd storage cluster is schematically shown in Fig.\,\ref{fig:doob-join}.
+
+% \begin{figure}[tbh]
+%   \centering
+%   \includegraphics[width=0.5\textwidth]{figures/doob-join.pdf}
+%   \caption{Conceptual diagram of the Event Builders interfacing the XRootD cluster.}
+%   \label{fig:doob-join}
+% \end{figure}
 
 \section{The Cluster}
 \subsection{The nodes}
 
-The \textit{CERN Neutrino Platform} cluster (called \texttt{neut}) is now being formed using about 350 nodes in
-total reclaimed from ATLAS.  We propose tol dedicate about 50 nodes in
-support of developing the online buffer system for the Single-Phase
-protoDUNE detector adequately scaled for storing three days worth of
-expected data.To label this sub-cluster we will use the name ``\texttt{neut-spbuf}''.
+The \textit{CERN Neutrino Platform} cluster (``\texttt{neut}'') is now being formed using about 350 nodes in
+total reclaimed from ATLAS.  We propose to dedicate about 50 nodes in
+support of developing the online buffer system for NP04.  
+As described above, this is adequately scaled for storing three days worth of
+data at the expected rate. To label this sub-cluster we will use the name ``\texttt{neut-spbuf}''.
 
-Initially \texttt{neut-spbuf} will be for developing and functional testing of the buffer system design. 
-Meanwhile, we will explore what is needed to migrate \texttt{neut-spbuf} into actual
-operation and after potential upgrades will proceed to perform scalability testing with realistic data load.
-
-\subsection{The Servers}
-
-The servers in the current \texttt{neut} cluster have very limited disk storage.  The
-\texttt{neut-spbuf} nodes must be upgraded to provide storage to meet
-the 3-day buffer requirement. To meet the ``High rate'' requirement we
-will install $2\times 3$TB SATA disks in each of the 50
-\texttt{neut-spbuf} nodes.
-
-On the other hand, each machine has 16\,GB of RAM and right cores running at 2.6\,GHz clock speed,
-which makes this a capable computing resource.
+Initially \texttt{neut-spbuf} will be used to implement the design
+described here, perform functionality testing measure its performance
+with realistic data loads.  Meanwhile, we will explore what is needed
+to migrate \texttt{neut-spbuf} into actual operation.
 
 \subsection{Networking}
 
-The ``High rate'' scenario requires sinking a peak of 3.0 GByte/sec
-(24 Gbps) throughput during the beam spill.  Between spills, when
-cosmic muon triggers are acquired, the throughput is somewhat reduced
-but we take 3.0 GByte/sec as our requirement.  Spread across the 50
-\texttt{neut-spbuf} nodes these streams this will approximately fill
-50\% of the existing 1Gbps NICs.  We expect similar multiplicity at
-the data production end (the Event Builder layer of the NP04 DAQ).
+As described above, the ``High rate'' scenario will produce 0.5 Gbps
+per storage host during the spill.  Initial testing will use a switch
+with 48 1Gbps + 4 10Gbps ports which is procured by CERN.  This
+reduces the number of storage nodes to 47 (with the 48th being the
+\xrd redirector and F-FTS host).  During the development phase, the
+4$\times$10 Gbps ports can be used to connect to the greater CERN
+network, to the NP04 detector or a dedicated high-rate data source
+with 10+ Gbps NIC(s) (hardware for this is not yet identified).
 
 During initial testing we will request a 20 Gbps link between the
 current location of \texttt{neut}\footnote{CERN building 185} and
 central CERN computing services including EOS and the NP04 detector
 site\footnote{CERN building EHN1}.
 
-To supply this connectivity we require 50 switch ports at 1Gbps and
-(effectively) one switch port at 20Gbps.  Based on our current design
-it is possible to segment the network streams so that the total
-bandwidth is spread over multiple switches, for example two switches
-each with 25 ports at 1Gbps and 1 port with 10 Gbps.  One example
-switch is the Cisco SG500X-48P which can provide 48 1Gbps ports and
-ample ports on the high-bandwidth side.  One such switch is needed on
-the DAQ end of the 20Gbps link and one on the \texttt{neut-spbuf} end.
 
 \section{Additional Work Items}
-A few items will require additional R\&D, such as
+There are some known items that require additional thought and R\&D.
 \begin{itemize}
-\item Where the metadata will be produced, e.g. in the Event Builders or on the machines
-in the \texttt{neut} cluster
-\item What is the exact mechanism of interaction between the \xrd middleware and the FTS; our initial intention
-is to use HTTP notification of FTS which is in turn activated by the \xrd ``ofs.hotify'' mechanism. Generation
-of the necessary metadata will also need to be activated at this point in the data path, and the necessary software
-is yet to be designed.
+\item Where will the ``SAM JSON'' metadata file be produced?  The two
+  identified options are the Event Builders and the \xrd storage
+  hosts.  
+\item Do we turn on \xrd-FUSE to give F-FTS a file system to poll or
+  do we use HTTP POST to ``push'' notifications of new files?
+\item Will the switch still perform at 50\% saturation (one-way) on
+  all its ports?
+\item We must implement a ``recovery'' mode that identifies files that
+  failed to transfer to EOS and attempts to remedy.
+\item Some monitoring is needed to notify of any failures and indicate
+  success.  Responsibility for a file starts on an \xrd
+  \texttt{open()} call by the DAQ and finishes when confirmation that
+  a file has been written successfully to EOS (at least).  
+\item Where will the buffer nodes physically reside when in production?
 \end{itemize}
 
 
