@@ -8,6 +8,7 @@
 \usepackage[pdftex,pdfpagelabels,bookmarks,hyperindex,hyperfigures]{hyperref}
 
 \newcommand{\pd}{protoDUNE\xspace}
+\newcommand{\pdsp}{pD/SP\xspace}
 \newcommand{\xrd}{XRootD\xspace}
 
 \title{The clustered storage option for the protoDUNE NP04 Online Buffer}
@@ -20,12 +21,10 @@
 
 \begin{abstract}
 \noindent  This note describes the clustered storage
-solution for the online buffer of the \pd (experiment NP04, Single-Phase LArTPC).
+solution for the online buffer for the CERN experiment NP04 which include the single-phase protoDUNE LArTPC detector (\pdsp).
 Basic data characteristics and  parameters of such storage are estimated. \xrd is proposed as the underlying
-storage clustering technology. It is suggested that among other options, a portion of the existing   \textit{Neutrino Platform}
-computer cluster at CERN could potentially be utilized for the development, testing and actual implementation of the NP04 online buffer. 
-The reader is encouraged to peruse references to DUNE DocDB provided in the text for more detailed information on individual
-items included in this note.
+storage clustering technology. It is suggested that a portion of the existing   \textit{Neutrino Platform}
+computer cluster at CERN (``neut'') be utilized for the development, testing and actual implementation of the NP04 online buffer. 
 \end{abstract}
 
 %%%%%%%%%%%%%
@@ -41,23 +40,24 @@ The place of the buffer in the data transmission chain therefore can be visualiz
 \begin{figure}[tbh]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/big-picture.pdf}
-  \caption{Place of the buffer in the data transmission chain.}
+  \caption{Place of the buffer in the data transmission chain for NP04.}
   \label{fig:big-picture}
 \end{figure}
 
 \subsection{Data Characteristics}
 
-The current estimates \cite{docdb1086} bracket the expected range of data rate
-and data volume in \pd \cite{docdb186} due to in-spill beam triggers and out-of-spill cosmic ray muon triggers.
-For historical reasons, the scenarios on the opposite sides of the bracket are named ``Central'' and ``High rate''.
-There are two main assumptions which drive the expected data rate:
+Current estimates \cite{docdb1086} for data rate and volume bracket a range expected
+in NP04 \cite{docdb186} when considering in-spill beam triggers and out-of-spill cosmic ray muon triggers.
+Three scenarios are considered.  The two that bracket the range are named ``Central'' and ``High rate''.  
+Critical assumptions are listed below:
 \begin{itemize}
-\item the beam trigger rate as per the run plan
-\item the requirement that a cosmic-ray muon trigger is acquired out-of-spill for every in-spill beam trigger; this is due to
-the calibration plan currently in the works and whose details are out of the scope of this document and subject to
-further R\&D
+\item beam spill is 4.5 seconds and cycle is 22.5 seconds
+\item the beam trigger rate (assumed 25 or 50 Hz)
+\item one out-of-spill cosmic trigger for every in-spill beam trigger
+\item read out all APAs
+\item a compression factor of 4 will be applied in the DAQ
 \end{itemize}
-\noindent Below is the summary of the principal data characteristics in \pd:
+\noindent Below is the summary of the principal data characteristics for NP04 at the two ends of their estimated range:
 \begin{table}[tbh]
 \centering
 \begin{tabular}{l l}
@@ -65,19 +65,19 @@ further R\&D
 \textbf{Metric} & \textbf{Value} \\
 \hline
 \hline
-trigger rate				& 25 -- 50 Hz \\  \hline
-peak data rate (DAQ internal, instantaneous during spill)	& 1.5 -- 3.0 GB/s \\ \hline
-daily data volume &  25 -- 50TB \\ \hline
-3-day buffer capacity & 150 -- 300TB \\  \hline
+trigger rate            & 25 -- 50 Hz \\  \hline
+peak data rate          & 1.5 -- 3.0 GB/s \\ \hline
+daily data volume       &  25 -- 50TB \\ \hline
+3-day buffer capacity   & 150 -- 300TB \\  \hline
 \hline
 \end{tabular}
-\caption{\label{tab:data_char}Expected protoDUNE data characteristics.}
+\caption{\label{tab:data_char}Expected NP04 data characteristics.}
 \end{table}
 
 \subsection{F-FTS}
-Basic reqruirements for the system to handle the \pd raw data are presented in \cite{docdb1209}.
+Basic requirements for the buffer system to handle the NP04 raw data are presented in \cite{docdb1209}.
 The design which meets these requirements is outlined in \cite{docdb1212}. It leverages the
-Fermi File Transfer System (F-FTS) to perform two essential transfers:
+Fermi File Transfer System (F-FTS) to manage two essential transfers:
 \begin{itemize}
 \item from the online buffer to CERN mass disk storage (EOS)
 \item from EOS to CERN tape (CASTOR) and  mass storage at FNAL and other US sites
@@ -90,30 +90,49 @@ Buffer Farm'' in this diagram corresponds to the NP04 online buffer.
 \begin{figure}[tbh]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/ftsinstances_v2.png}
-  \caption{The two instances of FTS used for marshaling raw data from protoDUNE.}
+  \caption{The two instances of FTS used for marshaling raw data from NP04.}
   \label{fig:ftsinstances}
 \end{figure}
 
- \noindent F-FTS uses the Fermilab SAM system for file catalog and metadata functionality,
+F-FTS uses the Fermilab SAM system for file catalog and metadata functionality,
 and to keep track of the state of each transfer. In order to make use of this functionality, metadata
-needs to be created before F-FTS takes ownership of a particular file. Checksums also need to be
-generated to validate transfers throughout the chain of transmission and are typically considered
-a part of the file metadata. Computing the checksums
-as well as collecting the necesary metadata require both I/O bandwidth and CPU.
+needs to be created before F-FTS takes ownership of a particular file. 
+Included in this metadata is a file checksum to be used to identify any corruption during file transfer.
+We seek to implement a method to calculate the checksum and collect other metadata which does 
+not incur an additional read of the file from the buffer storage.
 
-Typically the F-FTS operates in the dropbox mode, whereby it detects the arrival of a new file
-according to configurable rules (e.g. filename patterns). In this mode, it must have a POSIX-like access to the file
-system which is under its watch. Alternatively, F-FTS can be triggered via a HTTP POST request
-from an external agent. The actual transfer can be handled by F-FTS itself (i.e. it works
-as a client) or by third-party tools. The state of the transfer is registered in SAM
-and recovery mechanisms are available to ensure a robust transfer.
+We expect F-FTS to learn of new files in the buffer in one of two
+possible modes.  
+%
+The first option is that we will rely on the ``dropbox'' mode of
+operation, whereby F-FTS detects the arrival of a new file according
+to configurable rules (e.g. file name patterns). In this mode, F-FTS
+must have the ability to list POSIX-like file system directories.
+This required functionality would be provided by \xrd's FUSE
+interface.
+%
+The second option is to arrange for F-FTS to be triggered via a HTTP
+POST request by an external agent, itself run in response to a trigger
+from \xrd signaling the closing of a file.
+
+Independent from the notification mechanism, F-FTS will be responsible
+for initiating the transfer of the newly buffered file from the buffer
+storage to EOS.  We expect this to be done using F-FTS ``third party
+transfer'' mode, specifically by invoking \xrd's direct
+server-to-server transfer mechanism (eg \texttt{xrdcp --tpc}).  It is
+worth noting that this transfer mechanism does not require exposing
+the details of the buffer system.  All file identifiers are in a
+common ``\texttt{root://}'' namespace using the host name of the
+buffer system \xrd redirector.
 
 \section{Design of the Online Buffer}
-\subsection{The Event Builders}
-The Liquid Argon TPC  and a photon detector subsystem in \pd are read out by means of
-computing elements called ``board readers''. Each reader gets data from a portion of the detector,
+\subsection{DAQ Assumptions}
+The buffer system design assumes a few high level design features for the DAQ.
+The Liquid Argon TPC  and a photon detector subsystem in \pdsp are read out by means of
+computing elements (\textit{artDAQ} nodes) called ``Board Readers'' (BR). 
+Each reader gets data from a portion of the detector,
 and each triggered event must be assembled separately from fragments of the data. This function
-is performed by the Event Builders, as schematically shown in Fig.\,\ref{fig:upstream}.
+is performed by the ``Event Builders'' (EB) nodes, as schematically shown in Fig.\,\ref{fig:upstream}.
 
 \begin{figure}[tbh]
   \centering
@@ -121,10 +140,13 @@ is performed by the Event Builders, as schematically shown in Fig.\,\ref{fig:ups
   \caption{Conceptual diagram of the data flow within DAQ, from the detector to the Event Builders.}
   \label{fig:upstream}
 \end{figure}
-\noindent Orchestration of data flow from the Board Readers to Event Builders can be done in a number
-of ways, and the current working assumption is that this will be implemented as a standard round-robin
-configuration. More sophisticated load-balancing algorithms are alse being considered. As the name suggests,
-the Event Builders create a complete data record in memory for each triggered event (readout period),
+
+We assume the routing of data from the BR to the EB layers follows a deterministic round-robin strategy.
+We have heard other more sophisticated, less deterministic strategies suggested.
+
+
+As the name suggests,
+the Event Builders create a complete record in memory out of all fragments from the detector for a given trigger (readout period),
 which then must be persisted in storage. It is optimal that  this storage also serves as the online buffer 
  which needs to be a part of the system in any case (\ref{sec:the_role}), since otherwise an additional transfer procedure
 to a different storage device would need to be implemented and managed.
