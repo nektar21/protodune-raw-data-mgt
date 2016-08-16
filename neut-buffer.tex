@@ -20,24 +20,24 @@
 
 \begin{abstract}
 \noindent  This note describes the clustered storage
-solution for the online buffer of the \pd (experiment NP04, Single-Phase LArTPC).
+solution for the online buffer of the  Single-Phase \pd (CERN experiment NP04).
 Basic data characteristics and  parameters of such storage are estimated. \xrd is proposed as the underlying
 storage clustering technology. It is suggested that among other options, a portion of the existing   \textit{Neutrino Platform}
-computer cluster at CERN could potentially be utilized for the development, testing and actual implementation of the NP04 online buffer. 
-The reader is encouraged to peruse references to DUNE DocDB provided in the text for more detailed information on individual
-items included in this note.
+This document is based on the materials previously developed, and the reader is encouraged to peruse references to DUNE DocDB
+provided in the text for more information as needed.
 \end{abstract}
 
 %%%%%%%%%%%%%
 \section{Overview}
 \subsection{The Role of the Online Buffer}
 \label{sec:the_role}
-The online buffer of the NP04 experiment must be put in place to absorb the potentially high instantaneous (in-spill) DAQ
-data rate before transmission of raw data to mass storage. It is also needed to satisfy the CERN requirement of providing
-3 days worth of storage to make operation of the experiment possible in case of a network and/or central services outage.
-Combined with the projected data rate, this requirement determines the overall capacity of the buffer. From the buffer,
+The online buffer of the NP04 experiment must be put in place to absorb the high instantaneous (in-spill) DAQ
+data rate before transmission of raw data to mass storage. It is also needed to satisfy the nominal CERN requirement of
+providing 3 days worth of storage to make operation of the experiment possible in case of a network and/or central services
+outage. Combined with the projected data rate, this requirement determines the overall capacity of the buffer. From the buffer,
 the data needs to be delivered to the high-performance  disk storage (EOS) located at the CERN central services.
 The place of the buffer in the data transmission chain therefore can be visualized as in Fig.\,\ref{fig:big-picture}.
+EOS serves as the staging area for data transfer to other mass storage facilities such as dCache and tape at FNAL.
 \begin{figure}[tbh]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/big-picture.pdf}
@@ -48,7 +48,7 @@ The place of the buffer in the data transmission chain therefore can be visualiz
 \subsection{Data Characteristics}
 
 The current estimates \cite{docdb1086} bracket the expected range of data rate
-and data volume in \pd \cite{docdb186} due to in-spill beam triggers and out-of-spill cosmic ray muon triggers.
+and data volume in NP04 \cite{docdb186} due to in-spill beam triggers and out-of-spill cosmic ray muon triggers.
 For historical reasons, the scenarios on the opposite sides of the bracket are named ``Central'' and ``High rate''.
 There are two main assumptions which drive the expected data rate:
 \begin{itemize}
@@ -57,7 +57,7 @@ There are two main assumptions which drive the expected data rate:
 the calibration plan currently in the works and whose details are out of the scope of this document and subject to
 further R\&D
 \end{itemize}
-\noindent Below is the summary of the principal data characteristics in \pd:
+\noindent Below is the summary of the principal data characteristics in NP04:
 \begin{table}[tbh]
 \centering
 \begin{tabular}{l l}
@@ -66,7 +66,7 @@ further R\&D
 \hline
 \hline
 trigger rate				& 25 -- 50 Hz \\  \hline
-peak data rate (DAQ internal, instantaneous during spill)	& 1.5 -- 3.0 GB/s \\ \hline
+peak data rate (DAQ internal during spill)	& 1.5 -- 3.0 GB/s \\ \hline
 daily data volume &  25 -- 50TB \\ \hline
 3-day buffer capacity & 150 -- 300TB \\  \hline
 \hline
@@ -75,7 +75,7 @@ daily data volume &  25 -- 50TB \\ \hline
 \end{table}
 
 \subsection{F-FTS}
-Basic reqruirements for the system to handle the \pd raw data are presented in \cite{docdb1209}.
+Basic reqruirements for the system to handle the NP04 raw data are presented in \cite{docdb1209}.
 The design which meets these requirements is outlined in \cite{docdb1212}. It leverages the
 Fermi File Transfer System (F-FTS) to perform two essential transfers:
 \begin{itemize}
@@ -84,8 +84,8 @@ Fermi File Transfer System (F-FTS) to perform two essential transfers:
 \end{itemize}
 
 \noindent It is foreseen that two distinct instances of F-FTS will be deployed to fill each
-respective role. This is schematically illustrated in Fig.\,\ref{fig:ftsinstances}. The ``SP Disk
-Buffer Farm'' in this diagram corresponds to the NP04 online buffer.
+respective role. This is schematically illustrated in Fig.\,\ref{fig:ftsinstances} where these instances are labeled ``FTS-1'' and ``FTS-2''.
+The ``SP Disk Buffer Farm'' in this diagram corresponds to the NP04 online buffer.
 
 \begin{figure}[tbh]
   \centering
@@ -110,10 +110,11 @@ and recovery mechanisms are available to ensure a robust transfer.
 
 \section{Design of the Online Buffer}
 \subsection{The Event Builders}
-The Liquid Argon TPC  and a photon detector subsystem in \pd are read out by means of
+The Liquid Argon TPC  and a photon detector subsystem in NP04 are read out by means of
 computing elements called ``board readers''. Each reader gets data from a portion of the detector,
-and each triggered event must be assembled separately from fragments of the data. This function
-is performed by the Event Builders, as schematically shown in Fig.\,\ref{fig:upstream}.
+and each triggered event must be assembled  from fragments of the data. This function
+is performed by the computers called ``Event Builders'' (EB), as schematically shown in Fig.\,\ref{fig:upstream}.
+Multiple Event Builders are necessary to handle the load due to the projected data rate.
 
 \begin{figure}[tbh]
   \centering
@@ -130,10 +131,46 @@ which then must be persisted in storage. It is optimal that  this storage also s
 to a different storage device would need to be implemented and managed.
 
 \subsection{Attached vs Clustered Storage}
-Any \pd data taking scenario currently under consideration requires sustained rate
+Any data taking scenario currently under consideration requires sustained rate
 of ``data to disk'' in hundreds of MB per second. In practice this means that
 multiple hard drives are needed to absorb such rate and have enough headroom
 for stable operation of the system.
+There are a few principal options for the placement of storage in the system:
+\begin{itemize}
+\item SAN (block-level network storage)
+\item HDDs attached direectly to each of the Event Builders
+\item File-level clustered storage
+\end{itemize}
+
+\noindent The SAN option has investigated and rejected for a number of reasons such as difficulty of sharing among multiple
+nodes, potential for network bottlenecks etc. The attached storage option is more attractive because of its simplicity and because it
+naturally leverages the parallelism of multiple Event Builders.
+% and offers transparency for the DAQ developers since it is just a local file system.
+However, it also has disadvantages:
+\begin{itemize}
+\item The transfer agents (F-FTS in the current design) will need to run on each and every EB node. The additional load
+due to these processes will depend on the content of the metadata which needs to be produced before the
+transfer is actuated, and methods of its gathering (e.g. whether external run conditions database needs to be queried etc).
+
+\item Storage space would be effectively split among individual nodes which could make management of the buffer more difficult.
+\end{itemize}
+
+\noindent The file-level clustered storage such as based on \xrd \cite{xrootd} does require additional nodes thus increasing the cost of the system.
+At the same time, it offers the following advantages
+\begin{itemize}
+\item Storage is exposed to its clients as an integral entity as opposed to a number of separate HDDs, and sharing of files over the network
+becomes trivial. Integration with ROOT may provide additional convenience to the developers.
+
+\item It provides additional ways to balance the load on the disk drives.
+
+\item Functions related to creation of metadata, checksum etc can now reside in the storage cluster, thus reducing
+the load on the Event Builders.
+
+\item Certain features of \xrd  greatly facilitate application development, for example callbacks can be created for various
+file operations which is very useful for integration with FTS and other components of the data handling system.
+\end{itemize}
+
+\noindent Interaction of the Event Builders with a \xrd storage cluster is schematically shown in Fig.\,\ref{fig:doob-join}.
 
 \begin{figure}[tbh]
   \centering
@@ -142,27 +179,31 @@ for stable operation of the system.
   \label{fig:doob-join}
 \end{figure}
 
-\section{Concept}
+\section{The Cluster}
+\subsection{The nodes}
 
-The \texttt{neut} cluster is now being formed using about 350 nodes in
-total reclaimed from ATLAS.  We will dedicate about 50 nodes in
-support of developing the disk buffer system for the single-phase
+The \textit{CERN Neutrino Platform} cluster (called \texttt{neut}) is now being formed using about 350 nodes in
+total reclaimed from ATLAS.  We propose tol dedicate about 50 nodes in
+support of developing the online buffer system for the Single-Phase
 protoDUNE detector adequately scaled for storing three days worth of
-expected data.  To label this sub-cluster we say
-``\texttt{neut-spbuf}''.  Initially \texttt{neut-spbuf} will be for
-developing and testing the buffer system design.  Meanwhile, we will
-explore what is needed to migrate \texttt{neut-spbuf} into actual
-operation.
+expected data.To label this sub-cluster we will use the name ``\texttt{neut-spbuf}''.
 
-\section{Disk}
+Initially \texttt{neut-spbuf} will be for developing and functional testing of the buffer system design. 
+Meanwhile, we will explore what is needed to migrate \texttt{neut-spbuf} into actual
+operation and after potential upgrades will proceed to perform scalability testing with realistic data load.
 
-The current \texttt{neut} nodes have very limited disk storage.  The
+\subsection{The Servers}
+
+The servers in the current \texttt{neut} cluster have very limited disk storage.  The
 \texttt{neut-spbuf} nodes must be upgraded to provide storage to meet
 the 3-day buffer requirement. To meet the ``High rate'' requirement we
 will install $2\times 3$TB SATA disks in each of the 50
 \texttt{neut-spbuf} nodes.
 
-\section{Networking}
+On the other hand, each machine has 16\,GB of RAM and right cores running at 2.6\,GHz clock speed,
+which makes this a capable computing resource.
+
+\subsection{Networking}
 
 The ``High rate'' scenario requires sinking a peak of 3.0 GByte/sec
 (24 Gbps) throughput during the beam spill.  Between spills, when
@@ -170,11 +211,11 @@ cosmic muon triggers are acquired, the throughput is somewhat reduced
 but we take 3.0 GByte/sec as our requirement.  Spread across the 50
 \texttt{neut-spbuf} nodes these streams this will approximately fill
 50\% of the existing 1Gbps NICs.  We expect similar multiplicity at
-the data production end (the Event Builder layer of the pD/SP DAQ).
+the data production end (the Event Builder layer of the NP04 DAQ).
 
 During initial testing we will request a 20 Gbps link between the
 current location of \texttt{neut}\footnote{CERN building 185} and
-central CERN computing including EOS and the pD/SP detector
+central CERN computing services including EOS and the NP04 detector
 site\footnote{CERN building EHN1}.
 
 To supply this connectivity we require 50 switch ports at 1Gbps and
@@ -185,6 +226,19 @@ each with 25 ports at 1Gbps and 1 port with 10 Gbps.  One example
 switch is the Cisco SG500X-48P which can provide 48 1Gbps ports and
 ample ports on the high-bandwidth side.  One such switch is needed on
 the DAQ end of the 20Gbps link and one on the \texttt{neut-spbuf} end.
+
+\section{Additional Work Items}
+A few items will require additional R\&D, such as
+\begin{itemize}
+\item Where the metadata will be produced, e.g. in the Event Builders or on the machines
+in the \texttt{neut} cluster
+\item What is the exact mechanism of interaction between the \xrd middleware and the FTS; our initial intention
+is to use HTTP notification of FTS which is in turn activated by the \xrd ``ofs.hotify'' mechanism. Generation
+of the necessary metadata will also need to be activated at this point in the data path, and the necessary software
+is yet to be designed.
+\end{itemize}
+
+
 
 \begin{thebibliography}{1}
 \bibitem{docdb1086}
