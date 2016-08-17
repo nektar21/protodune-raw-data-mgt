@@ -78,6 +78,7 @@ daily data volume       &  25 -- 50TB \\ \hline
 \end{table}
 
 \subsection{F-FTS}
+\label{sec:f-fts}
 Basic requirements for the buffer system to handle the NP04 raw data are presented in \cite{docdb1209}.
 The design which meets these requirements is outlined in \cite{docdb1212}. It leverages the
 Fermi File Transfer System (F-FTS) to manage two essential transfers:
@@ -104,8 +105,11 @@ Included in this metadata is a file checksum to be used to identify any corrupti
 We seek to implement a method to calculate the checksum and collect other metadata which does 
 not incur an additional read of the file from the buffer storage.
 
-We expect F-FTS to learn of new files in the buffer in one of two
-possible modes.  
+Interfaces implemented in F-FTS currently require the metadata to come in a JSON-formatted file
+(effectively a ``companion file'' for each data file). This can be potentially changed at some point but
+for now remains a working assumption.
+
+We expect F-FTS to learn of new files in the buffer in one of two possible modes.  
 %
 The first option is that we will rely on the ``dropbox'' mode of
 operation, whereby F-FTS detects the arrival of a new file according
@@ -252,9 +256,13 @@ is in reality minimum and in any event is ameliorated by some benefits.
   development than the ``Attached'' solution.
 \item The design is based on Free Software and commodity hardware both
   of which is well understood in the community.
+
+\item Because of the overall size of the  ``\texttt{neut}'' cluster (of over 300 nodes)
+we expect to have an adquate number of potential spares at any given time.
+
 \end{itemize}
 
-\subsection{1 Gbps vs 10 Gbps}
+\subsection{1\,Gbps vs 10\,Gbps}
 
 A crucial decision in the design is the bandwidth of the storage
 hosts.  The two reasonable extremes are 1 vs 10 Gbps.  The arguments
@@ -301,7 +309,7 @@ to migrate \texttt{neut-spbuf} into actual operation.
 
 \subsection{Networking}
 
-As described above, the ``High rate'' scenario will produce 0.5 Gbps
+As described above, the ``High rate'' scenario will produce 0.5\,Gbps
 per storage host during the spill.  Initial testing will use a switch
 with 48 1Gbps + 4 10Gbps ports which is procured by CERN.  This
 reduces the number of storage nodes to 47 (with the 48th being the
@@ -319,9 +327,8 @@ site\footnote{CERN building EHN1}.
 \section{Additional Work Items}
 There are some known items that require additional thought and R\&D.
 \begin{itemize}
-\item Where will the ``SAM JSON'' metadata file be produced?  The two
-  identified options are the Event Builders and the \xrd storage
-  hosts.  
+\item Where will the ``SAM JSON'' metadata file be produced?  See comments in \ref{sec:f-fts}
+The two   identified options are the Event Builders and the \xrd storage  hosts.  
 \item Do we turn on \xrd-FUSE to give F-FTS a file system to poll or
   do we use HTTP POST to ``push'' notifications of new files?
 \item Will the switch still perform at 50\% saturation (one-way) on
