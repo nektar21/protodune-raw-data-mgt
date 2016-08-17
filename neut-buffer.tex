@@ -7,11 +7,12 @@
 \usepackage{url}
 \usepackage[pdftex,pdfpagelabels,bookmarks,hyperindex,hyperfigures]{hyperref}
 
-\newcommand{\pd}{protoDUNE\xspace}
-\newcommand{\pdsp}{pD/SP\xspace}
+%\newcommand{\pd}{protoDUNE\xspace}
+%\newcommand{\pdsp}{pD/SP\xspace}
 \newcommand{\xrd}{XRootD\xspace}
+\newcommand{\expname}{\textit{NP04}\xspace}
 
-\title{The clustered storage option for the protoDUNE NP04 Online Buffer}
+\title{The clustered storage option for the protoDUNE \expname Online Buffer}
 \date{\today}
 \author{N. Benekos, M. Potekhin and B. Viren}
 
@@ -21,17 +22,17 @@
 
 \begin{abstract}
 \noindent  This note describes the clustered storage
-solution for the online buffer for the CERN experiment NP04 which include the single-phase protoDUNE LArTPC detector (\pdsp).
+solution for the online buffer for the CERN experiment \expname which includes the single-phase protoDUNE LArTPC detector.
 Basic data characteristics and  parameters of such storage are estimated. \xrd is proposed as the underlying
 storage clustering technology. It is suggested that a portion of the existing   \textit{Neutrino Platform}
-computer cluster at CERN (``\texttt{neut}'') be utilized for the development, testing and actual implementation of the NP04 online buffer. 
+computer cluster at CERN (``\texttt{neut}'') be utilized for the development, testing and actual implementation of the \expname online buffer. 
 \end{abstract}
 
 %%%%%%%%%%%%%
 \section{Overview}
 \subsection{The Role of the Online Buffer}
 \label{sec:the_role}
-The online buffer of the NP04 experiment must be put in place to absorb the high instantaneous (in-spill) DAQ
+The online buffer of the \expname experiment must be put in place to absorb the high instantaneous (in-spill) DAQ
 data rate before transmission of raw data to mass storage. It is also needed to satisfy the nominal CERN requirement of
 providing 3 days worth of storage to make operation of the experiment possible in case of a network and/or central services
 outage. Combined with the projected data rate, this requirement determines the overall capacity of the buffer. From the buffer,
@@ -41,14 +42,14 @@ EOS serves as the staging area for data transfer to other mass storage facilitie
 \begin{figure}[tbh]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/big-picture.pdf}
-  \caption{Place of the buffer in the data transmission chain for NP04.}
+  \caption{Place of the buffer in the data transmission chain for \expname.}
   \label{fig:big-picture}
 \end{figure}
 
 \subsection{Data Characteristics}
 
 Current estimates \cite{docdb1086} for data rate and volume bracket a range expected
-in NP04 \cite{docdb186} when considering in-spill beam triggers and out-of-spill cosmic ray muon triggers.
+in \expname \cite{docdb186} when considering in-spill beam triggers and out-of-spill cosmic ray muon triggers.
 Three scenarios are considered.  The two that bracket the range are named ``Central'' and ``High rate''.  
 Critical assumptions are listed below:
 \begin{itemize}
@@ -59,7 +60,7 @@ Critical assumptions are listed below:
 \item a compression factor of 4 will be applied in the DAQ
 \end{itemize}
 
-\noindent Below is the summary of the principal data characteristics for NP04 at the two ends of their estimated range:
+\noindent Below is the summary of the principal data characteristics for \expname at the two ends of their estimated range:
 
 \begin{table}[tbh]
 \centering
@@ -74,12 +75,12 @@ daily data volume       &  25 -- 50TB \\ \hline
 3-day buffer capacity   & 150 -- 300TB \\  \hline
 \hline
 \end{tabular}
-\caption{\label{tab:data_char}Expected NP04 data characteristics.}
+\caption{\label{tab:data_char}Expected \expname data characteristics.}
 \end{table}
 
 \subsection{F-FTS}
 \label{sec:f-fts}
-Basic requirements for the buffer system to handle the NP04 raw data are presented in \cite{docdb1209}.
+Basic requirements for the buffer system to handle the \expname raw data are presented in \cite{docdb1209}.
 The design which meets these requirements is outlined in \cite{docdb1212}. It leverages the
 Fermi File Transfer System (F-FTS) to manage two essential transfers:
 \begin{itemize}
@@ -89,38 +90,44 @@ Fermi File Transfer System (F-FTS) to manage two essential transfers:
 
 \noindent It is foreseen that two distinct instances of F-FTS will be deployed to fill each
 respective role. This is schematically illustrated in Fig.\,\ref{fig:ftsinstances} where these instances are labeled ``FTS-1'' and ``FTS-2''.
-The ``SP Disk Buffer Farm'' in this diagram corresponds to the NP04 online buffer.
+The ``SP Disk Buffer Farm'' in this diagram corresponds to the \expname online buffer.
 
 \begin{figure}[tbh]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/ftsinstances_v2.png}
-  \caption{The two instances of FTS used for marshaling raw data from NP04.}
+  \caption{The two instances of FTS used for marshaling raw data from \expname.}
   \label{fig:ftsinstances}
 \end{figure}
 
 F-FTS uses the Fermilab SAM system for file catalog and metadata functionality,
-and to keep track of the state of each transfer. In order to make use of this functionality, metadata
+and to keep track of the state of each transfer. 
+In order to make use of this functionality, metadata
 needs to be created before F-FTS takes ownership of a particular file. 
 Included in this metadata is a file checksum to be used to identify any corruption during file transfer.
-We seek to implement a method to calculate the checksum and collect other metadata which does 
-not incur an additional read of the file from the buffer storage.
+We seek to implement a method to calculate the checksum and collect other metadata which incurs no or minimal additional read-load on the buffer storage.  
+Regardless of where the metadata are produced, the results must go into a file which will accompany the DAQ data file and be in a form suitable for consumption by F-FTS (ie, JSON format and following a prescribed schema).
 
-Interfaces implemented in F-FTS currently require the metadata to come in a JSON-formatted file
-(effectively a ``companion file'' for each data file). This can be potentially changed at some point but
-for now remains a working assumption.
+F-FTS must be able to discover new files.  There are options in this
+discovery process and they drive elements of the design of the buffer.
+They are named by the multiplicity of FTS instances and the mechanism
+of discovery:
 
-We expect F-FTS to learn of new files in the buffer in one of two possible modes.  
-%
-The first option is that we will rely on the ``dropbox'' mode of
-operation, whereby F-FTS detects the arrival of a new file according
-to configurable rules (e.g. file name patterns). In this mode, F-FTS
-must have the ability to list POSIX-like file system directories.
-This required functionality would be provided by \xrd's FUSE
-interface.
-%
-The second option is to arrange for F-FTS to be triggered via a HTTP
-POST request by an external agent, itself run in response to a trigger
-from \xrd signaling the closing of a file.
+\begin{description}
+\item[1/HTTP] A single F-FTS instance is explicitly ``push''-notified
+  through an HTTP POST request for each new file.  Notification is
+  made by an agent running on each storage node which itself is
+  triggered by an \xrd signal.
+\item[1/FUSE] A single F-FTS instance polls for new files to appear in
+  an \xrd-FUSE file system exported to the F-FTS host.
+\item[N/local] N instances of F-FTS are run, one on each storage host.
+  Each polls its local local file system for new files.
+\end{description}
+
+All options are possible and close to equivalent in terms of the
+amount of required development, risk, robustness, etc.  Somewhat
+subjectively, they are listed in order decreasing preference.  During
+the development phase we will explore them to determine which is best
+suited.
 
 Independent from the notification mechanism, F-FTS will be responsible
 for initiating the transfer of the newly buffered file from the buffer
@@ -130,33 +137,42 @@ server-to-server transfer mechanism (eg \texttt{xrdcp --tpc}).  It is
 worth noting that this transfer mechanism does not require exposing
 the details of the buffer system.  All file identifiers are in a
 common ``\texttt{root://}'' namespace using the host name of the
-buffer system \xrd redirector.
+buffer system \xrd redirector.  
 
 \section{Design of the Online Buffer}
+
 \subsection{DAQ Assumptions}
-The buffer system design assumes a few high level design features for the DAQ.
-The Liquid Argon TPC  and a photon detector subsystem in \pdsp are read out by means of
-computing elements (\textit{artDAQ} nodes) called ``Board Readers'' (BR). 
-Each reader gets data from a portion of the detector,
-and each triggered event must be assembled separately from fragments of the data. This function
-is performed by the ``Event Builders'' (EB) nodes, as schematically shown in Fig.\,\ref{fig:upstream}.
+
+The buffer system design relies on a few high-level assumptions about
+the design of the DAQ.  In general, we assume the part of the DAQ that
+``faces'' the buffer is a layer of ``Event Builder'' (EB) \textit{artDAQ}
+nodes as shown schematically in Fig.~\ref{fig:upstream}.
 
 \begin{figure}[tbh]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/upstream.pdf}
-  \caption{Conceptual diagram of the data flow within DAQ, from the detector to the Event Builders.}
+  \caption{Conceptual diagram of the assumed data flow within DAQ, from the detector to the Event Builders (EB).  The buffer system depends on high level assumptions about the output of the EB layer.}
   \label{fig:upstream}
 \end{figure}
 
-We assume the routing of data from the BR to the EB layers follows a deterministic round-robin strategy.
-We have heard other more sophisticated, less deterministic strategies suggested.
+We assume each EB will interact with the buffer following these steps:
 
+\begin{enumerate}
+\item EB opens an \xrd connection to the global redirector for each ``file'' using a ``\texttt{root://}'' URL that matches an prescribed prefix.
+\item \xrd redirects the EB to a storage node (this is done transparently by the \xrd client library code).
+\item EB streams data for some length of time.
+\item EB closes the stream so that approximately 2-5~GB is transferred.
+\end{enumerate}
 
-As the name suggests,
-the Event Builders create a complete record in memory out of all fragments from the detector for a given trigger (readout period),
-which then must be persisted in storage. It is optimal that  this storage also serves as the online buffer 
- which needs to be a part of the system in any case (\ref{sec:the_role}), since otherwise an additional transfer procedure
-to a different storage device would need to be implemented and managed.
+If the EB nodes take responsibility for producing the metadata file
+then it is preferred that this file is also transferred in the same
+manner.  If required, mounting \xrd via FUSE on the EB nodes can be
+investigated.
+
+The network connectivity between the EB and buffer nodes still must be
+worked out.  Some issues regarding this are described below, but the
+exact connectivity is still to be determined.
+
 
 \subsection{Attached vs Clustered Storage}
 Any data taking scenario currently under consideration requires sustained rate
@@ -238,17 +254,19 @@ addressed above and it provides these additional benefits:
 \subsection{An Extra Layer}
 
 As described above, this design requires and extra ``layer'' of 50
-hosts.  Depending on how we move into production, this additional cost
-is in reality minimum and in any event is ameliorated by some benefits.
+hosts compared to the ``Attached storage'' option.  The cost of this
+extra layer is not as high as it may first seem and it brings some
+useful benefits:
 
 \begin{itemize}
-\item We have the existing ``\texttt{neut}'' cluster (described more
-  below) which provides hosts of almost adequate specification.  They
-  initially lacked sufficient HDD which are currently being provisioned.
+\item We plan leverage the existing ``\texttt{neut}'' cluster
+  (described more below) which provides hosts with specifications that
+  almost match requirements.  Initially, they lacked sufficient HDD
+  capacity but plans exist to provide the required upgrades.
 \item \xrd CPU requirements are almost negligible leaving a large
-  fraction of the cluster available for the inevitable last minute
-  change in requirements or to offload tasks (such as metadata file
-  production) from the DAQ.
+  fraction of the cluster available.  This ``free'' excess CPU
+  capacity serves as a contingency against unexpected or ad-hoc
+  processing needs.
 \item Defining the boundary of this subsystem at the network allows
   for development and debugging which is decoupled from DAQ and to
   some extent F-FTS.
@@ -266,13 +284,16 @@ we expect to have an adquate number of potential spares at any given time.
 
 A crucial decision in the design is the bandwidth of the storage
 hosts.  The two reasonable extremes are 1 vs 10 Gbps.  The arguments
-for 1 Gbps are:
+for 1 Gbps and against 10 Gbps are:
 
 \begin{itemize}
-\item 1 Gbps NIC is commodity, 10 Gbps is available but not commonly default.
+\item 1 Gbps NIC is commodity, 10 Gbps is certainly available but not
+  common.
 \item 10 Gbps implies $\times 10$ more HDD in each box and the
   supporting components (hardware array, more RAM).  This is tempered
   by requiring only $\sim 5$ hosts.
+\item Concentrating into fewer hosts means the system is more degraded
+  by the loss of any one host.
 \item \xrd has very low CPU requirements, and even at the scale of 5
   hosts, many cores will be left idle and available, but still fewer
   than in the 50 host case.
@@ -282,7 +303,14 @@ for 1 Gbps are:
   bays.
 \end{itemize}
 
-
+Entertaining the 10 Gbps option will require a cost estimate to be
+performed.  The systems must likely be bought new and would number 5
+to cover the scaling plus one more as a spare (live or cold) backup.
+An additional low-spec host is needed to house the \xrd redirector and
+F-FTS instance (under the ``1/FUSE'' or ``1/HTTP'' designs). Each
+system would require $\sim 20 \times 3$ TB disks using an bus that can
+assure the 50 MB/s I/O bandwidth assumption.  Of course, the systems
+would require (at least) 10 Gbps NIC and a matching switch.
 
 % \noindent Interaction of the Event Builders with a \xrd storage cluster is schematically shown in Fig.\,\ref{fig:doob-join}.
 
@@ -298,7 +326,7 @@ for 1 Gbps are:
 
 The \textit{CERN Neutrino Platform} cluster (``\texttt{neut}'') is now being formed using about 350 nodes in
 total reclaimed from ATLAS.  We propose to dedicate about 50 nodes in
-support of developing the online buffer system for NP04.  
+support of developing the online buffer system for \expname.  
 As described above, this is adequately scaled for storing three days worth of
 data at the expected rate. To label this sub-cluster we will use the name ``\texttt{neut-spbuf}''.
 
@@ -315,31 +343,42 @@ with 48 1Gbps + 4 10Gbps ports which is procured by CERN.  This
 reduces the number of storage nodes to 47 (with the 48th being the
 \xrd redirector and F-FTS host).  During the development phase, the
 4$\times$10 Gbps ports can be used to connect to the greater CERN
-network, to the NP04 detector or a dedicated high-rate data source
+network, to the \expname detector or a dedicated high-rate data source
 with 10+ Gbps NIC(s) (hardware for this is not yet identified).
 
 During initial testing we will request a 20 Gbps link between the
 current location of \texttt{neut}\footnote{CERN building 185} and
-central CERN computing services including EOS and the NP04 detector
+central CERN computing services including EOS and the \expname detector
 site\footnote{CERN building EHN1}.
 
+\subsection{Production}
+
+For production, we expect to move the \texttt{neut-spbuf} nodes
+physically near the DAQ cluster.  As described above, the exact
+network connectivity with these nodes has yet to be determined.  If
+the same switch is put into service, two of its 10 Gbps ports can
+connect to the DAQ switch, assuming it has ports available.  The DAQ
+EB and buffer layers are ``fully connected'' so it may be required
+that they be connected all by a single switch.  
 
 \section{Additional Work Items}
 There are some known items that require additional thought and R\&D.
 \begin{itemize}
-\item Where will the ``SAM JSON'' metadata file be produced?  See comments in \ref{sec:f-fts}
-The two   identified options are the Event Builders and the \xrd storage  hosts.  
+\item Where will the ``SAM JSON'' metadata file be produced?  See
+  comments in \ref{sec:f-fts} The two identified options are the Event
+  Builders and the \xrd storage hosts.
 \item Do we turn on \xrd-FUSE to give F-FTS a file system to poll or
   do we use HTTP POST to ``push'' notifications of new files?
-\item Will the switch still perform at 50\% saturation (one-way) on
-  all its ports?
+\item What is the connectivity between DAQ EB and buffer nodes?  Do we
+  connect DAQ switch to buffer switch?  Do we have one shared switch?
+\item Will the switch still perform well when it sees 50\% saturation
+  (one-way) on all its ports?
 \item We must implement a ``recovery'' mode that identifies files that
   failed to transfer to EOS and attempts to remedy.
 \item Some monitoring is needed to notify of any failures and indicate
   success.  Responsibility for a file starts on an \xrd
   \texttt{open()} call by the DAQ and finishes when confirmation that
   a file has been written successfully to EOS (at least).  
-\item Where will the buffer nodes physically reside when in production?
 \end{itemize}
 
 
