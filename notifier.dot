@@ -1,13 +1,45 @@
 digraph pdrnotifier {
+	rankdir=LR;
+	
+	processes[label="Process"];
+	file[label="File or\nnetwork",shape=box];
+	server[label="Server",shape=octagon];
+
+
 	fifo[shape=box];
-	db[shape=box];
-	exec[shape=box];
+	db[shape=box, label="DB"];
+	xrootd[shape=octagon,label="XRootD\nredirector",color=red]
+	eos[shape=octagon,label="EOS"]
+
+	fts[shape=octagon,label="F-FTS",color="blue"];
+	sam[shape=octagon,label="SAM",color="orange"];
 	http[shape=box];
 
-	xrootd->fifo->handler[label="file state change"];
-	handler->db[label="record"];
-	handler->fifo;
-	handler->exec->notifier->http->fts;
-	recovery->db->recovery->exec;
+	exec[shape=octagon,label="Process\nDispatcher",color="purple"];
+	handler[label="Handler",color="purple"];
+	notifier[label="Notifier",color="purple"];
+	recovery[label="Revcovery",color="purple"];
+	metafilebuilder[style=dashed,color="purple"];
 	
+
+	xrootd->fifo[label="file state"];
+	fifo->handler[label="read()"];
+	handler->db[label="record"];
+	handler->fifo[label="poll()"];
+	handler->exec[label="forward"];
+	exec->notifier[label="forward"];
+	notifier->http[label="Xrootd URL"];
+	http->fts;
+	notifier->db;
+	recovery->db[label="query"];
+	db->recovery[label="orphaned"];
+	recovery->exec[label="replay"];
+	recovery->sam[label="query"];
+	sam->recovery[label="missing"];
+	exec->metafilebuilder->db;
+	metafilebuilder->exec;
+	fts->xrootd[label="xrdcp --tpc"];
+	fts->sam[label="update"];
+	
+	xrootd->eos[label="transfer"];
 }
