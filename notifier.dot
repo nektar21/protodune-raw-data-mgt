@@ -6,30 +6,37 @@ digraph pdrnotifier {
 	server[label="Server",shape=octagon];
 
 
-	fifo[shape=box];
+	daq1[label="DAQ EB1"];
+	daq2[label="DAQ EB2"];
+	daqn[label="DAQ EBN"];
+	
+	fifo[shape=box,label="FIFO"];
 	db[shape=box, label="DB"];
-	xrootd[shape=octagon,label="XRootD\nredirector",color=red]
+	xrootd[shape=octagon,label="XRootD\nRedirector",color=red]
 	eos[shape=octagon,label="EOS"]
 
 	fts[shape=octagon,label="F-FTS",color="blue"];
 	sam[shape=octagon,label="SAM",color="orange"];
-	http[shape=box];
+	http[shape=box,label="HTTP POST"];
 
 	exec[shape=octagon,label="Process\nDispatcher",color="purple"];
 	handler[label="Handler",color="purple"];
 	notifier[label="Notifier",color="purple"];
 	recovery[label="Revcovery",color="purple"];
-	metafilebuilder[style=dashed,color="purple"];
+	metafilebuilder[label="Metadata\nFile Producer",style=dashed,color="purple"];
 	
 
+	daq1->xrootd[label="TFile::Open()"];
+	daq2->xrootd[label="xrdcp"];
+	daqn->xrootd[label="..."];
 	xrootd->fifo[label="file state"];
 	fifo->handler[label="read()"];
 	handler->db[label="record"];
 	handler->fifo[label="poll()"];
 	handler->exec[label="forward"];
 	exec->notifier[label="forward"];
-	notifier->http[label="Xrootd URL"];
-	http->fts;
+	notifier->http;
+	http->fts[label="Xrootd URL"];
 	notifier->db;
 	recovery->db[label="query"];
 	db->recovery[label="orphaned"];
