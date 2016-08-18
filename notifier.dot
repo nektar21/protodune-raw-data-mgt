@@ -1,0 +1,13 @@
+digraph pdrnotifier {
+	fifo[shape=box];
+	db[shape=box];
+	exec[shape=box];
+	http[shape=box];
+
+	xrootd->fifo->handler[label="file state change"];
+	handler->db[label="record"];
+	handler->fifo;
+	handler->exec->notifier->http->fts;
+	recovery->db->recovery->exec;
+	
+}
