@@ -1,4 +1,5 @@
 digraph pdrnotifier {
+	label="Bespoked Design";
 	rankdir=LR;
 	
 	processes[label="Process"];
@@ -10,21 +11,36 @@ digraph pdrnotifier {
 	daq2[label="DAQ EB2"];
 	daqn[label="DAQ EBN"];
 	
-	fifo[shape=box,label="FIFO"];
-	db[shape=box, label="DB"];
-	xrootd[shape=octagon,label="XRootD\nRedirector",color=red]
+
+	fifo[shape=box,label="FIFO",color=red];
+	
+	xrootdrdr[shape=octagon,label="XRootD\nredirector",color=red]
+	xrootd[shape=octagon,label="XRootD\nserver N",color=red]
 	eos[shape=octagon,label="EOS"]
 
 	fts[shape=octagon,label="F-FTS",color="blue"];
 	sam[shape=octagon,label="SAM",color="orange"];
 	http[shape=box,label="HTTP POST"];
-
+	
 	exec[shape=octagon,label="Process\nDispatcher",color="purple"];
 	handler[label="Handler",color="purple"];
 	notifier[label="Notifier",color="purple"];
-	recovery[label="Revcovery",color="purple"];
+	recovery[label="Recovery",color="purple"];
 	metafilebuilder[label="Metadata\nFile Producer",style=dashed,color="purple"];
+	db[shape=box, label="DB"];
+
+	{rank="same"; handler; notifier; recovery; }
+
+	{rank="same"; xrootdrdr; xrootd; eos}
+	{rank="same"; fts; sam; fifo; http}
+
+
+
 	
+
+	daq1->xrootdrdr[style=dashed];
+	
+	xrootdrdr->xrootd[style=dashed];
 
 	daq1->xrootd[label="TFile::Open()"];
 	daq2->xrootd[label="xrdcp"];
@@ -45,7 +61,7 @@ digraph pdrnotifier {
 	sam->recovery[label="missing"];
 	exec->metafilebuilder->db;
 	metafilebuilder->exec;
-	fts->xrootd[label="xrdcp --tpc"];
+	fts->xrootdrdr[label="xrdcp --tpc"];
 	fts->sam[label="update"];
 	
 	xrootd->eos[label="transfer"];
