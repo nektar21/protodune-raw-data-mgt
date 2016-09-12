@@ -1,0 +1,26 @@
+digraph context {
+	rankdir=LR;
+	node[shape=box];
+	subgraph cluster_hall {
+		daq[label="DAQ"];
+		buf[label="Online\nBuffer\nSystem", fontsize=30];
+		label="EHN1/NP04 experiment area";
+	}
+	net[label="CERN\nnetwork",shape=circle];
+	eos[label="EOS\ndisk"];
+	castor[label="CASTOR\ntape"];
+	fnal[label="Fermilab"];
+	inst[label="Other\nInstitutions"];
+	
+	{rank=same; fnal; inst;}
+		
+
+	daq->buf->net->eos;
+	eos->castor;
+	eos->fnal;
+	eos->inst;
+	fnal->inst;
+	
+	
+	#label="NP04 Online Buffer System Context";
+}

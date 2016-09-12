@@ -1,0 +1,43 @@
+digraph diffuse {
+	newrank=true;
+	
+	rankdir=LR;
+
+	node[shape=box];
+
+	subgraph cluster_daq {
+		daq1[label="EB1+2"];
+		daq2[label="EB3+4"];
+		daq3[label="EB5+6"];
+		daq4[label="EB7+8"];
+		swdaq[label="DAQ switch", shape=octagon];
+		label="DAQ";
+	}
+
+	subgraph cluster_obs {
+		swobs[label="OBS switch", shape=octagon];
+		obs01[label="OBS 01"];
+		obs02[label="OBS 02"];
+		obs0n[label="OBS\n03...59"];
+		obs60[label="OBS 60"];
+		label="Diffuse Online Buffer System";
+	}
+	
+
+	daq1->swdaq[label="10Gbps",penwidth=2];
+	daq2->swdaq[label="10Gbps",penwidth=2];
+	daq3->swdaq[label="10Gbps",penwidth=2];
+	daq4->swdaq[label="10Gbps",penwidth=2];
+
+	swdaq->swobs[label="2x10Gbps",penwidth=4];
+	
+	swobs->obs01[label="1Gbps",dir=both];
+	swobs->obs02[label="1Gbps",dir=both];
+	swobs->obs0n[dir=both];
+	swobs->obs60[label="1Gbps",dir=both];
+	
+	//	{rank=same;	eos;swobs;}
+	swobs->EOS[label="2x10Gbps",penwidth=4,splines=false];
+	
+	
+}

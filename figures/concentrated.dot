@@ -1,0 +1,48 @@
+digraph concentrated {
+	newrank=true;
+	
+	rankdir=LR;
+
+	node[shape=box];
+
+	subgraph cluster_daq {
+		daq1[label="EB1+2"];
+		daq2[label="EB3+4"];
+		daq3[label="EB5+6"];
+		daq4[label="EB7+8"];
+		swdaq[label="DAQ switch", shape=octagon];
+		label="DAQ";
+	}
+
+	subgraph cluster_obs {
+		swobs[label="OBS switch", shape=octagon];
+		obs01[label="OBS 01"];
+		obs02[label="OBS 02"];
+		obss1a[label="storage\nunit a"];
+		obss1b[label="storage\nunit b"];
+		obss2a[label="storage\nunit a"];
+		obss2b[label="storage\nunit b"];
+		label="Concentrated Online Buffer System";
+	}
+	
+
+	daq1->swdaq[label="10Gbps",penwidth=2];
+	daq2->swdaq[label="10Gbps",penwidth=2];
+	daq3->swdaq[label="10Gbps",penwidth=2];
+	daq4->swdaq[label="10Gbps",penwidth=2];
+
+	swdaq->swobs[label="2x10Gbps",penwidth=4];
+	
+	swobs->obs01[label="10Gbps",dir=both];
+	swobs->obs02[label="10Gbps",dir=both];
+
+	obs01->obss1a;
+	obs01->obss1b;	
+	obs02->obss2a;
+	obs02->obss2b;	
+
+	//	{rank=same;	eos;swobs;}
+	swobs->EOS[label="2x10Gbps",penwidth=4,splines=false];
+	
+	
+}

@@ -1,0 +1,16 @@
+digraph interface {
+	rankdir=LR;
+	node[shape=box];
+	subgraph cluster_hall {
+		daq[label="DAQ"];
+		buf[label="Online\nBuffer\nSystem", fontsize=30];
+		label="EHN1/NP04 experiment area";
+	}
+	net[label="CERN\nnetwork",shape=circle];
+
+	daq->buf[penwidth=4,label="20 Gbps"];
+	buf->net[penwidth=4,label="20 Gbps"];
+	
+
+	
+}
