@@ -1,1 +1,91 @@
-#
+\documentclass[pdftex,12pt,letter]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{xspace}
+\usepackage{cite}
+\usepackage{url}
+\usepackage[pdftex,pdfpagelabels,bookmarks,hyperindex,hyperfigures]{hyperref}
+
+\newcommand{\pd}{protoDUNE\xspace}
+%\newcommand{\pdsp}{pD/SP\xspace}
+\newcommand{\xrd}{XRootD\xspace}
+\newcommand{\expname}{\textit{NP04}\xspace}
+
+\title{Prompt Processing System Requirements for the Single-Phase \pd}
+\date{\today}
+\author{M. Potekhin and B. Viren}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent  This note describes basic requirements for the prompt processing system in the Single-Phase \pd
+(CERN experiment \expname).
+\end{abstract}
+
+%%%%%%%%%%%%%
+\section{Overview}
+\subsection{Goals}
+\label{sec:goals}
+Prompt processing aims to provide QA of the data and estimates ofcertain  basic characteristics of the detector during the run.
+
+
+\subsection{Time Scale for Prompt Processing}
+\label{sec:timescale}
+ Prompt processing is sometimes referred to as ``express streams''.
+The intent is to have prompt processing of a part of the data on a time scale that could be useful to the operators.
+Empirically, this means tens of minutes (or better) from the time the data was taken rather than hours.
+
+\subsection{Data Rate and Volume}
+\label{sec:datavolume}
+Large data rate and volume in \pd makes it impossible to process a significant portion of the raw data on the time scale as described in \ref{sec:timescale}.
+According to the data taking scenario considered as nominal (see \cite{docdb1086}) the data rate is 1.4\,GB/s after lossless compression, and to size up
+the system and account for contingencies rates up to 3\,GB/s are under consideration.
+
+\subsection{Data Location}
+\label{sec:datalocation}
+The online buffer in \pd is located in the detector's proximity and will experience a high I/O load during the run (see \cite{docdb1086},\cite{docdb1212}), due
+to the high data rate coming out of DAQ and additional processing (such as construction of metadata and possibly calculation of checksums) which requires
+access to data after it is initially written to the buffer. In addition, the practical bandwidth of the network connecting \pd to CERN Central Services will be limited at 20Gbps
+and most of this may be taken by copying the data from the online buffer to CERN EOS. This means that application of computational resources such as CERN lxbatch
+or the Neutrino Platform cluster (both located on the central campus) will be problematic.
+
+CERN EOS appears to be the best suited platform from which to serve the data for prompt processing. Disk space for \pd will be procured and allocated
+before the start of the experiment. EOS has a variety of interfaces through which to access the data (including XRootD). It is in fact the staging area
+for a portion of production activity of the LHC experiments and its performance has been demonstrated.
+
+\section{Content of the Prompt Processing}
+At the time of writing there is no final decision as to what calculations will be included in prompt processing.
+
+\section{Requirements}
+\subsection{Automation}
+Based on the information above the prompt processing must be driven by the data arriving from DAQ as opposed to user intervention, i.e. have a high degree
+of automation.
+
+
+\begin{thebibliography}{1}
+\bibitem{docdb1086}
+{DUNE DocDB 1086: \textit{ protoDUNE/SP data scenarios with full stream (spreadsheet)}}\\
+\url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1086}
+
+%\bibitem{docdb186}
+%{DUNE DocDB 186: \textit{ ProtoDUNE Proposal}}\\
+%\url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=186}
+
+
+%\bibitem{docdb1209}
+%{DUNE DocDB 1209: \textit{Basic Requirements for the protoDUNE Raw Data Mangement System}}\\
+%\url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1209}
+
+
+\bibitem{docdb1212}
+{DUNE DocDB 1212: \textit{Design of the Data Management System for the protoDUNE Experiment}}\\
+\url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1212}
+
+
+\end{thebibliography}
+
+
+\end{document}
