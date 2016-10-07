@@ -47,47 +47,132 @@ the system and account for contingencies rates up to 3\,GB/s are under considera
 
 \subsection{Staging the Data for Prompt Processing}
 \label{sec:datalocation}
-The online buffer in \pd is located in the detector's proximity and will experience a high I/O load during the run (see \cite{docdb1086},\cite{docdb1212}), due
-to the high data rate coming out of DAQ and additional processing (such as construction of metadata and possibly calculation of checksums) which requires
-access to data after it is initially written to the buffer. In addition, the practical bandwidth of the network connecting \pd to CERN Central Services will be limited at 20Gbps
-and most of this may be taken by copying the data from the online buffer to CERN EOS. This means that application of computational resources such as the
-CERN lxbatch facility or the Neutrino Platform cluster ``neut'' (both located on the central campus) will be problematic.
 
-CERN EOS is the destination of the raw data after is has been initially recorded in the online buffer. Transmission of the data from the buffer to EOS
-will be done by F-FTS (\cite{docdb1212}). EOS appears to be the best suited platform from which to serve the data for prompt processing.
-Disk space for \pd will be procured and allocated before the start of the experiment which is helpful to ensure availability and plan usage.
-EOS has a variety of interfaces through which to access
-the data (including XRootD). It is in fact the staging area
-for a portion of production activity of the LHC experiments and its performance has been demonstrated.
+The data from the \pd DAQ first reaches nonvolatile storage media in
+the form of files temporarily stored in the \pd online disk
+buffer. This buffer exists as HDD-based storage units directly
+attached to a subset of the host computers that run various artDAQ
+processes.  The I/O load to and from the buffer HDDs is expected to be
+high enough as to limit any heretofore identified access.  See
+\cite{docdb1086},\cite{docdb1212} for details.  Substantial,
+additional access may require enlarging the buffer system to provide
+more read throughput.
 
-Using EOS as the staging area for prompt processing also dictates the time scale for receiving data from the online buffer, which should
-logically happen no later than a few minutes.
+There will be a 20 Gbps full-duplex network connection between the
+buffer host computers and the CERN EOS storage system.  The outbound
+portion is dedicated to transfer of raw files during running of the
+detector.  This transfer is to be accomplished by F-FTS
+(\cite{docdb1212}).  Any substantial, additional use will need to be
+carefully considered and may need to be rejected.  Inbound bandwidth
+is available.
+
+CERN EOS then appears to be the best suited platform from which to
+serve the data for prompt processing.  The amount of storage needed on
+EOS must still be understood and requested.  Policy (enforced by
+F-FTS) must be developed to manage the available space and in a way
+that takes into account the needs for prompt-processing.
+
+Staging the data beyond EOS may be necessary if insufficient computing
+resources are available which directly and efficiently access EOS.  In
+considering possible resources the required $\sim$10 minute processing
+turn-around time needs to be remembered.
+
 
 \section{Content of the Prompt Processing}
 At the time of writing there is no final decision as to what calculations will be included in prompt processing.
-Judging by experience, however, a reasonable minimum is monitoring channel noise spectra, assessing their stability and time evolution
-(should it occur). This involves applying FFT to data in each channel.
+The potential pool of data processing jobs span several orders of magnitude of CPU time.
+The processing time of some jobs is sensitive to the data content.  
+For example, noisier data or data with more showers can slow down reconstruction.
 
-Every type of calculation aimed at extracting event features (e.g. partial even reconstruction) will need to involve signal deconvolution
-and filtering. Once again this involves calculating FFT for each channel (i.e. there is at least one shared component in the calculation).
-It may be optimal to structure prompt processing into a few tiers:
+It is expected some balance must be struck between what processing is
+done promptly and what computing resources are available.  In order to
+allow optimize, it is required for detector and physics experts to
+prioritize what processing they believe is needed and for computing
+experts and lab computing managers to push back with what computing
+resources may be available.  Being able to quantitatively describe
+this tug of war will help have the best possible balance in place when
+the detector commissioning begins.
+
+It is also worth recognizing that minimum-bias sampling of the data at
+multiple points in the processing chain is needed.  This allows ever
+more CPU intensive processing to be applied to an ever smaller portion
+of the data while being able to leverage the prior stages.  Workflow
+automation is expected to provide support for this progressive minimum
+bias sampling as described below.
+
+Some possible jobs are listed in rough order of this staging.  To be
+determined is a minimum-bias sampling fraction for each stage.
+
+\begin{description}
+\item[DAQ] A summary of DAQ-level data.  This category explicitly
+  requires no data decompression.  It may report summaries of data
+  rates on per-FEMB or per-ASIC basis or summaries of any metadata
+  about this level of data such as any status codes the DAQ provides.
+  This processing is a candidate for running directly within artDAQ
+  monitor processes instead of prompt-processing.
+\item[ADC] A summary of ADC-level data.  This (and later stages)
+  requires data decompression.  It may report on statistics such as
+  mean and RMS on a per channel basis and/or grouped by units of
+  electronics and/or physical groupings of the wire or PMT being read
+  out.
+\item[FFT] A summary of the data in frequency space.  This largely
+  provides measures of noise.  It requires running a discrete Fourier
+  transform (FFT) on channel waveforms.  They may be used to monitor
+  for any harmonic or coherent noise sources.  Various
+  summing/averaging over different partitions of the detector may be
+  done.
+\item[Sig] A summary of the data after signal processing.  This
+  largely provides measures of the signals.  The processing is in
+  frequency space and so uses the output of FFT.  It includes software
+  noise subtraction, filtering and a deconvolution.  Statistical
+  summary of total energy per unit detector (wire, ASIC, APA, etc) can
+  be formed.
+\item[Reco] Results from running some type of reconstruction. This may
+  be simpler and more directed than currently existing.  It may, for
+  example, provide a coarse count of straight-track muons.
+\end{description}
+
+In addition to the data processing categories there is a special
+\textit{Visualization} category of processing.  It is this processing
+which may take data output from any of the above listed stages in
+order to produce end-user representations.  This stage will need to
+have a minimum bias fraction chosen based on both its required
+processing time and based on how fast an human is executed to see and
+understand updates.  Visualization stage may include items such as:
+
 \begin{itemize}
-\item FFT and initial analysis and presentation of signal spectra
-\item Deconvolution of the detector and electronics reponse, digital filtering and application of thresholds
-\item Partial reconstruction e.g. for a fraction of cosmic ray tracks and other event types
-\item Calculating metrics based on such reconstruction, histogramming etc
+\item Histograms of statistical quantities.
+\item Strip charts showing their history.
+\item These statistical measure may be snapshots or dynamically
+  growing over the run or updated over some some fixed time window.
+\item 2D displays of underlying values such as spectrograms of the \textit{FFT}
+  output (vs wire), or time vs wire using output from \textit{ADC} and \textit{Sig}.
 \end{itemize}
 
-\noindent It is reasonable to assume that each tier in this scheme will result in significant data reduction. In general, we anticipate that
-the output data coming out of prompt processing will be largely limited to histograms and therefore be very modes in size.
+
+\noindent It is the output of this visualization stage which will be
+committed to long term storage.  It will comprise a relatively small
+data set.  It is expected to consist of of ROOT files holding
+histograms and graphs, graphical formats (PNG/SVG) or other special
+purpose formats, depending on the the visualization scheme.
+
+Results of the intermediate stages may not be kept.  However, it is
+worth noting that there is a potential for large processing efficiency
+gains to be made if the entire data can be run through the
+\textit{Sig} processing followed by dropping samples below some
+threshold.  This sample contains all information needed for follow-on
+imaging, pattern recognition and final particle ID and momentum
+reconstruction and in a much smaller volume.
 
 \section{Requirements}
+
 \subsection{Workflow Automation}
+
 Prompt processing represents a use case quite different from managed production or user analysis, and is closer to
 procesing data in streaming mode.
 
 Based on the information above the prompt processing must be driven by the data arriving from DAQ as opposed to user intervention, i.e. have a high degree
-of automation. This also applies to the tiered structure of processing as outlined above, i.e. the ability to select a fraction of the data stream as is progresses
+of automation. This also applies to the tiered structure of processing as outlined above, i.e. the ability to select a minimum-bias sampled fraction of the data stream as is progresses
 through the chain. For example, if 100 cores are allocated to FFT calculation this may be done for approximately 10\% of the events in streaming mode.
 Depending on the type of deconvolution being employed (1D vs 2D) proceeding to the next step will result in further factor of 10 reduction in the number of
 events that can be processed at this scale. Event reconstruction will require additional CPU and it may be necessary to scale down the number of
@@ -95,6 +180,13 @@ events at this stage.
 
 While the arguments presented above are quite preliminary, it is likely that it will be necessary to automate the workflow such that a configurable fraction
 of data produced in each tier of processing is ingested by the next stage.
+
+The automation must allow some flexibility in setting what
+minimum-bias sampling fractions are employed.  At least these
+fractions will need to be specified on a per run period basis.  Given
+that some jobs' processing times depend on the data content there may
+be a need for a more dynamic adjustment to what amount of data flows
+through which prompt jobs.
 
 \subsection{Resource Utilization}
 The system is required to be flexible enough to take advantage of varying type of resources. For example, the ``neut'' cluster at CERN
@@ -105,17 +197,38 @@ run on this cluster locally.
 Flexibility needs to be retained to utilize the lxbatch facility at CERN or even run jobs on the facilities at FNAL, BNL and other such locations
 in the US and Europe. This is possible by utilizing EOS interfaces such as XRootD.
 
-\subsection{Monitoring}
-It will be neccesary to monitor the prompt processing system at a few levels, from general availability and throughput of the computing element
-to individual job level and log file information.
+As mentioned above, it may be required to explore computing resources
+at other institutions.  Such explorations must consider the nominal
+turn around time that makes this processing ``prompt''.
 
-A Web service will be required to ensure optimal and user-friendly interface to the monitoring system.
+\subsection{Monitoring}
+It will be neccesary to monitor the prompt processing system at a few
+levels, from general availability and throughput of the computing
+element to individual job level and log file information.  A web
+service will be required to ensure optimal and user-friendly interface
+to the monitoring system.
+
+Another web service (potentially integrated with the above) is
+required to display results of the \textit{Vis} stage for use by
+detector experts, commissioning and operations shift workers as well
+as general collaborators who may not be at CERN.  Some requirements
+for this web service(s) are:
+
+\begin{itemize}
+\item Display current and past sets of \textit{Vis} stage outputs.
+\item Automatically (``live'') update key \textit{Vis} results as they become available.
+\item Provide features to navigate to more detailed visualizations based on summaries.
+\end{itemize}
+
 
 \subsection{Interfaces}
-The prompt processing system will need to interface the data handling system, which will be based on F-FTS. A simple example
+The prompt processing system will need to interface with the data handling system (\textit{ie} F-FTS/SAM). A simple example
 would be prevention of the data being purged from EOS while it's still needed for processing.
 
-A Web service will be required to present the results of calculations done by the prompt processing system to the end users.
+One or more web services, described above, will need access to
+information about the prompt-processing itself as well as the output
+of the \textit{Vis} stage.
+
 
 \begin{thebibliography}{1}
 \bibitem{docdb1086}
