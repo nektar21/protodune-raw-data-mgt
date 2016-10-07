@@ -35,7 +35,8 @@ Prompt processing aims to provide QA of the data and estimates ofcertain  basic 
 \subsection{Time Scale for Prompt Processing}
 \label{sec:timescale}
  Prompt processing is sometimes referred to as ``express streams''.
-The intent is to have prompt processing of a part of the data on a time scale that could be useful to the operators.
+The intent is to have prompt processing of a part of the data on a time scale that could be useful to the operators to
+form judgement about the general health and performance of the detector.
 Empirically, this means tens of minutes (or better) from the time the data was taken rather than hours.
 
 \subsection{Data Rate and Volume}
@@ -44,26 +45,77 @@ Large data rate and volume in \pd makes it impossible to process a significant p
 According to the data taking scenario considered as nominal (see \cite{docdb1086}) the data rate is 1.4\,GB/s after lossless compression, and to size up
 the system and account for contingencies rates up to 3\,GB/s are under consideration.
 
-\subsection{Data Location}
+\subsection{Staging the Data for Prompt Processing}
 \label{sec:datalocation}
 The online buffer in \pd is located in the detector's proximity and will experience a high I/O load during the run (see \cite{docdb1086},\cite{docdb1212}), due
 to the high data rate coming out of DAQ and additional processing (such as construction of metadata and possibly calculation of checksums) which requires
 access to data after it is initially written to the buffer. In addition, the practical bandwidth of the network connecting \pd to CERN Central Services will be limited at 20Gbps
-and most of this may be taken by copying the data from the online buffer to CERN EOS. This means that application of computational resources such as CERN lxbatch
-or the Neutrino Platform cluster (both located on the central campus) will be problematic.
+and most of this may be taken by copying the data from the online buffer to CERN EOS. This means that application of computational resources such as the
+CERN lxbatch facility or the Neutrino Platform cluster ``neut'' (both located on the central campus) will be problematic.
 
-CERN EOS appears to be the best suited platform from which to serve the data for prompt processing. Disk space for \pd will be procured and allocated
-before the start of the experiment. EOS has a variety of interfaces through which to access the data (including XRootD). It is in fact the staging area
+CERN EOS is the destination of the raw data after is has been initially recorded in the online buffer. Transmission of the data from the buffer to EOS
+will be done by F-FTS (\cite{docdb1212}). EOS appears to be the best suited platform from which to serve the data for prompt processing.
+Disk space for \pd will be procured and allocated before the start of the experiment which is helpful to ensure availability and plan usage.
+EOS has a variety of interfaces through which to access
+the data (including XRootD). It is in fact the staging area
 for a portion of production activity of the LHC experiments and its performance has been demonstrated.
+
+Using EOS as the staging area for prompt processing also dictates the time scale for receiving data from the online buffer, which should
+logically happen no later than a few minutes.
 
 \section{Content of the Prompt Processing}
 At the time of writing there is no final decision as to what calculations will be included in prompt processing.
+Judging by experience, however, a reasonable minimum is monitoring channel noise spectra, assessing their stability and time evolution
+(should it occur). This involves applying FFT to data in each channel.
+
+Every type of calculation aimed at extracting event features (e.g. partial even reconstruction) will need to involve signal deconvolution
+and filtering. Once again this involves calculating FFT for each channel (i.e. there is at least one shared component in the calculation).
+It may be optimal to structure prompt processing into a few tiers:
+\begin{itemize}
+\item FFT and initial analysis and presentation of signal spectra
+\item Deconvolution of the detector and electronics reponse, digital filtering and application of thresholds
+\item Partial reconstruction e.g. for a fraction of cosmic ray tracks and other event types
+\item Calculating metrics based on such reconstruction, histogramming etc
+\end{itemize}
+
+\noindent It is reasonable to assume that each tier in this scheme will result in significant data reduction. In general, we anticipate that
+the output data coming out of prompt processing will be largely limited to histograms and therefore be very modes in size.
 
 \section{Requirements}
-\subsection{Automation}
-Based on the information above the prompt processing must be driven by the data arriving from DAQ as opposed to user intervention, i.e. have a high degree
-of automation.
+\subsection{Workflow Automation}
+Prompt processing represents a use case quite different from managed production or user analysis, and is closer to
+procesing data in streaming mode.
 
+Based on the information above the prompt processing must be driven by the data arriving from DAQ as opposed to user intervention, i.e. have a high degree
+of automation. This also applies to the tiered structure of processing as outlined above, i.e. the ability to select a fraction of the data stream as is progresses
+through the chain. For example, if 100 cores are allocated to FFT calculation this may be done for approximately 10\% of the events in streaming mode.
+Depending on the type of deconvolution being employed (1D vs 2D) proceeding to the next step will result in further factor of 10 reduction in the number of
+events that can be processed at this scale. Event reconstruction will require additional CPU and it may be necessary to scale down the number of
+events at this stage.
+
+While the arguments presented above are quite preliminary, it is likely that it will be necessary to automate the workflow such that a configurable fraction
+of data produced in each tier of processing is ingested by the next stage.
+
+\subsection{Resource Utilization}
+The system is required to be flexible enough to take advantage of varying type of resources. For example, the ``neut'' cluster at CERN
+is a rather vanilla example of a HTCondor installation. It will be scaled to up to 350 nodes with multiple cores each. It does not have Grid middleware
+installed and technically this should not be necessary since it's local to the data. This implies that it must be possible to generate jobs to
+run on this cluster locally.
+
+Flexibility needs to be retained to utilize the lxbatch facility at CERN or even run jobs on the facilities at FNAL, BNL and other such locations
+in the US and Europe. This is possible by utilizing EOS interfaces such as XRootD.
+
+\subsection{Monitoring}
+It will be neccesary to monitor the prompt processing system at a few levels, from general availability and throughput of the computing element
+to individual job level and log file information.
+
+A Web service will be required to ensure optimal and user-friendly interface to the monitoring system.
+
+\subsection{Interfaces}
+The prompt processing system will need to interface the data handling system, which will be based on F-FTS. A simple example
+would be prevention of the data being purged from EOS while it's still needed for processing.
+
+A Web service will be required to present the results of calculations done by the prompt processing system to the end users.
 
 \begin{thebibliography}{1}
 \bibitem{docdb1086}
