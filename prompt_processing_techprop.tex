@@ -1,0 +1,245 @@
+\documentclass[pdftex,12pt,letter]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{xspace}
+\usepackage{cite}
+\usepackage{url}
+\usepackage[pdftex,pdfpagelabels,bookmarks,hyperindex,hyperfigures]{hyperref}
+
+\newcommand{\pd}{protoDUNE\xspace}
+%\newcommand{\pdsp}{pD/SP\xspace}
+\newcommand{\xrd}{XRootD\xspace}
+\newcommand{\expname}{\textit{NP04}\xspace}
+
+\title{Technical Proposal for Prompt Processing System in the Single-Phase \pd}
+\date{\today}
+\author{M.\,Potekhin and B.\,Viren}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent  This note describes a proposal for the design of
+the prompt processing system in the Single-Phase \pd
+(CERN experiment \expname). We start with a brief summary of the data characteristics and data handling patterns
+in \pd \cite{docdb1086,docdb1212} and present a design which satisfies the basic requirements set
+forth in  DocDB 1811 \cite{docdb1811}.
+\end{abstract}
+
+%%%%%%%%%%%%%
+\section{Overview}
+\subsection{Data Scenarios and Data Handling}
+\label{sec:rawdata}
+Scenarios for data taking in \pd are collected and maintained in \cite{docdb1086}. The following parameters
+are assumed at the time of writing: the raw data rate will 1.4\,GB/s after lossless compression, and to size up
+the system and account for contingencies rates up to 3\,GB/s are under consideration.
+
+Outline of the design of the data handling system is documented in  \cite{docdb1212} and other prior \pd documentation.
+According to it, the data is tranmitted from the online buffer to the CERN EOS via a 20 Gbps full-duplex network connection.
+The EOS system serves as the hub and staging area for the \pd raw data from which
+it gets committed to the tape archive at CERN and also transmitted to FNAL and potentially
+other US and international locations. All or most links in the data transmission chain will be based on F-FTS.
+
+EOS appears to be the best suited platform from which to
+serve the data for prompt processing for the following reasons:
+\begin{itemize}
+
+\item The online buffer is likely to operate at a significant data rate (see above) and additional I/O load on the buffer is undesirable.
+
+\item It can be be expected that the data arrives to EOS rather quickly after having been captured in the online buffer (e.g.$\sim$1\,min).
+
+\item EOS has variety of interfaces including \xrd which simplifies access from various types of locations (both inside and outside the CERN perimeter).
+
+\end{itemize}
+
+\subsection{Outline of Prompt Processing}
+\label{sec:outline}
+According to \cite{docdb1811}  prompt processing needs to occur on the scale
+of tens of minutes (or better) from the time the data was taken.
+
+
+
+\section{Content of the Prompt Processing}
+At the time of writing there is no final decision as to what calculations will be included in prompt processing.
+The potential pool of data processing jobs span several orders of magnitude of CPU time.
+The processing time of certain types of jobs is sensitive to the data content.  
+For example, noisier data or data with more showers can slow down reconstruction.
+
+It is expected some balance must be struck between what processing is
+done promptly and what computing resources are available.  In order to
+allow optimization, it is required for detector and physics experts to
+prioritize what processing they believe is needed and for computing
+experts and lab computing managers to provide reliable information on
+what computing resources are e available. It is hoped that this process
+will result in the best possible balance in place when
+the detector commissioning begins.
+
+It is also worth recognizing that sampling of the data at
+multiple points in the processing chain is needed.  This allows ever
+more CPU intensive processing to be applied to an ever smaller portion
+of the data while being able to leverage the prior stages.  Workflow
+automation is expected to provide support for this progressive 
+``down-sampling'' as described below.
+Some possible jobs are listed in rough order of this staging.  To be
+determined is a sampling fraction for each stage.
+
+\begin{description}
+\item[DAQ] A summary of DAQ-level data.  This category explicitly
+  requires no data decompression.  It may report summaries of data
+  rates on per-FEMB or per-ASIC basis or summaries of any metadata
+  about this level of data such as any status codes the DAQ provides.
+  This processing is a candidate for running directly within artDAQ
+  monitor processes instead of prompt-processing.
+\item[ADC] A summary of ADC-level data.  This (and later stages)
+  requires data decompression.  It may report on statistics such as
+  mean and RMS on a per channel basis and/or grouped by units of
+  electronics and/or physical groupings of the wire or PMT being read
+  out.
+\item[FFT] A summary of the data in frequency space.  This largely
+  provides measures of noise.  It requires running a discrete Fourier
+  transform (FFT) on channel waveforms.  They may be used to monitor
+  for any harmonic or coherent noise sources.  Various
+  summing/averaging over different partitions of the detector may be
+  done.
+\item[Sig] A summary of the data after signal processing.  This
+  largely provides measures of the signals.  The processing is in
+  frequency space and so uses the output of FFT.  It includes software
+  noise subtraction, filtering and a deconvolution.  Statistical
+  summary of total energy per unit detector (wire, ASIC, APA, etc) can
+  be formed.
+\item[Reco] Results from running some type of reconstruction. This may
+  be simpler and more directed than currently existing.  It may, for
+  example, provide a coarse count of straight-track muons.
+\end{description}
+
+\noindent In addition to the data processing categories there is a special
+\textit{Visualization} category of processing.  It is this processing
+which may take data output from any of the above listed stages in
+order to efficinetly present it to the end-user.  This stage will need to
+have a sampling fraction  based on both the processing requirements
+(e.g. processing time) and based on how fast a human can absorb and understand
+the information as it undergoes updates.  Visualization stage may include items such as:
+
+\begin{itemize}
+\item Histograms of statistical quantities.
+\item Strip charts showing their history.
+\item These statistical measure may be snapshots or dynamically
+  growing over the run or updated over some some fixed time window.
+\item 2D displays of underlying values such as spectrograms of the \textit{FFT}
+  output (vs wire), or time vs wire using output from \textit{ADC} and \textit{Sig}.
+\end{itemize}
+
+
+\noindent It is the output of this visualization stage which will be
+committed to long term storage.  It will comprise a relatively small
+data set, in fact tiny compared to the volume of the input data.  It is expected
+to consist of of ROOT files holding histograms and graphs, graphical formats (PNG/SVG)
+or other special purpose formats, depending on the the visualization scheme.
+
+Results of the intermediate stages may not be kept.  However, it is
+worth noting that there is a potential for large processing efficiency
+gains to be made if the entire data can be run through the
+\textit{Sig} processing followed by dropping samples below some
+threshold.  This sample contains all information needed for follow-on
+imaging, pattern recognition and final particle ID and momentum
+reconstruction and in a much smaller volume.
+
+\section{Requirements}
+
+\subsection{Workflow Automation}
+
+Prompt processing represents a use case quite different from managed production or user analysis, and is closer to
+procesing data in streaming mode.
+
+Based on the information above the prompt processing must be driven by the data arriving from DAQ as opposed
+to user intervention, i.e. have a high degree of automation. This also applies to the tiered structure of processing as outlined above,
+i.e. the ability to select a fractional sample of the data stream as is progresses through the chain, at every stage.
+For example, if 100 cores are allocated to FFT calculation this may be done for approximately 10\% of the events
+in streaming mode. Depending on the type of deconvolution being employed (1D vs 2D) proceeding to the next
+step will result in further factor of 10 reduction in the number of events that can be processed at this scale.
+Event reconstruction will require additional CPU and it may be necessary to scale down the number of
+events at this stage.
+
+While the arguments presented above are quite preliminary, it is likely that it will be necessary to automate
+the workflow such that a configurable fraction of data produced in each tier of processing is ingested by the next stage.
+
+The automation must allow some flexibility in setting what
+sampling fractions are employed.  At least these
+fractions will need to be specified on a per run period basis.  Given
+that some jobs' processing times depend on the data content there may
+be a need for a more dynamic adjustment of the sampling fractions, perhaps
+automated so as to avoid backlogs and provide optimal throughput of the
+overall system.
+
+\subsection{Resource Utilization}
+The system is required to be flexible enough to take advantage of varying type of resources. For example, the ``neut'' cluster at CERN
+is a rather vanilla example of a HTCondor installation. It will be scaled to up to 350 nodes with multiple cores each. It does not have Grid middleware
+installed and technically this should not be necessary since it's local to the data. This implies that it must be possible to generate jobs to
+run on this cluster locally.
+
+Flexibility needs to be retained to utilize the lxbatch facility at CERN or even run jobs on the facilities at FNAL, BNL and other such locations
+in the US and Europe. This is possible by utilizing EOS interfaces such as XRootD.
+
+As mentioned above, it may be required to explore computing resources
+at other institutions.  Such explorations must consider the nominal
+turn around time that makes this processing ``prompt''.
+
+\subsection{Monitoring}
+It will be neccesary to monitor the prompt processing system at a few
+levels, from general availability and throughput of the computing
+element to individual job level and log file information.  A web
+service will be required to ensure optimal and user-friendly interface
+to the monitoring system.
+
+Another web service (potentially integrated with the above) is
+required to display results of the \textit{Vis} stage for use by
+detector experts, commissioning and operations shift workers as well
+as general collaborators who may not be at CERN.  Some requirements
+for this web service(s) are:
+
+\begin{itemize}
+\item Display current and past sets of \textit{Vis} stage outputs.
+\item Automatically (``live'') update key \textit{Vis} results as they become available.
+\item Provide features to navigate to more detailed visualizations based on summaries.
+\end{itemize}
+
+
+\subsection{Interfaces}
+The prompt processing system will need to interface with the data handling system (\textit{ie} F-FTS/SAM). A simple example
+would be prevention of the data being purged from EOS while it's still needed for processing.
+
+One or more web services, described above, will need access to
+information about the prompt-processing itself as well as the output
+of the \textit{Vis} stage.
+
+
+\begin{thebibliography}{1}
+\bibitem{docdb1086}
+{DUNE DocDB 1086: \textit{ protoDUNE/SP data scenarios with full stream (spreadsheet)}}\\
+\url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1086}
+
+%\bibitem{docdb186}
+%{DUNE DocDB 186: \textit{ ProtoDUNE Proposal}}\\
+%\url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=186}
+
+
+%\bibitem{docdb1209}
+%{DUNE DocDB 1209: \textit{Basic Requirements for the protoDUNE Raw Data Mangement System}}\\
+%\url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1209}
+
+
+\bibitem{docdb1212}
+{DUNE DocDB 1212: \textit{Design of the Data Management System for the protoDUNE Experiment}}\\
+\url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1212}
+
+\bibitem{docdb1811}
+{DUNE DocDB 1811: \textit{Prompt Processing System Requirements for the Single-Phase protoDUNE}}\\
+\url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1811}
+
+
+\end{thebibliography}
+
+
+\end{document}
