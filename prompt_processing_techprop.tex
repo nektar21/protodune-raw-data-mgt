@@ -24,8 +24,8 @@
 \noindent  This note describes a proposal for the design of
 the prompt processing system in the Single-Phase \pd
 (CERN experiment \expname). We start with a brief summary of the data characteristics and data handling patterns
-in \pd (DocDB\,1086 \cite{docdb1086}, DocDB\,1212 \cite{docdb1212}) and present a design which satisfies the basic requirements set
-forth in  DocDB 1811 \cite{docdb1811}.
+as documented in \pd (DocDB\,1086 \cite{docdb1086}, DocDB\,1212 \cite{docdb1212}) and present a design which
+satisfies the basic requirements set forth in  DocDB 1811 \cite{docdb1811}.
 \end{abstract}
 
 %%%%%%%%%%%%%
@@ -98,6 +98,21 @@ It may, for  example, provide a coarse count of straight muon track candidates.
 
 \end{description}
 
+
+\subsubsection{Downsampling}
+The categories of processing as outlined above may have drastically different resource requirements.
+%i.e. the ability to select a fractional sample of the data stream as is progresses through the chain, at every stage.
+For example, if 100 cores are allocated to FFT calculation this may be done for approximately 10\% of the events
+in streaming mode. Then, depending on the type of deconvolution being employed (1D vs 2D) this step
+may require an order of magnitude more CPU to complete. To stay within reasonable footprint,
+it is likely to become necessary to put only a fraction of the output of the FFT stage through deconvolution.
+Event reconstruction will require additional CPU and so it may also be necessary to scale down the number of
+events at this stage. So effectively we are considering ``downsampling'' of data as it progresses
+in the promp processing chain. This is primarily motivated by the FFT stage being very desirable for
+every TPC channel, while deconvolution can be done less frequently for more detailed QA and so on
+and so forth.
+
+
 \subsubsection{Visualization}
 The \textit{Visualization} category of processing
  may take data output from any of the above listed stages in
@@ -126,24 +141,12 @@ Results of the intermediate stages of Data Processing may not need to be preserv
 However, it is worth noting that there is a potential for large processing efficiency
 gains to be made if the entire data can be run through the \textit{Sig} processing followed by ZS.
 
-\section{Requirements}
+\section{Design Parameters}
 
 \subsection{Workflow Automation}
 
 Prompt processing represents a use case quite different from managed production or user analysis, and is closer to
-procesing data in streaming mode.
-
-Based on the information above the prompt processing must be driven by the data arriving from DAQ as opposed
-to user intervention, i.e. have a high degree of automation. This also applies to the tiered structure of processing as outlined above,
-i.e. the ability to select a fractional sample of the data stream as is progresses through the chain, at every stage.
-For example, if 100 cores are allocated to FFT calculation this may be done for approximately 10\% of the events
-in streaming mode. Depending on the type of deconvolution being employed (1D vs 2D) proceeding to the next
-step will result in further factor of 10 reduction in the number of events that can be processed at this scale.
-Event reconstruction will require additional CPU and it may be necessary to scale down the number of
-events at this stage.
-
-While the arguments presented above are quite preliminary, it is likely that it will be necessary to automate
-the workflow such that a configurable fraction of data produced in each tier of processing is ingested by the next stage.
+procesing data in streaming mode. For it to be efficient, it will be necessary to automate the workflow.
 
 The automation must allow some flexibility in setting what
 sampling fractions are employed.  At least these
