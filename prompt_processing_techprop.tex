@@ -12,7 +12,7 @@
 \newcommand{\xrd}{XRootD\xspace}
 \newcommand{\expname}{\textit{NP04}\xspace}
 
-\title{Technical Proposal for Prompt Processing System in the Single-Phase \pd}
+\title{Design of the Prompt Processing System in the Single-Phase \pd experiment (\expname)}
 \date{\today}
 \author{M.\,Potekhin and B.\,Viren}
 
@@ -21,9 +21,10 @@
 \maketitle
 
 \begin{abstract}
-\noindent  This note describes a proposal for the design of
-the prompt processing system in the Single-Phase \pd
-(CERN experiment \expname). We start with a brief summary of the data characteristics and data handling patterns
+\noindent  This note describes design parameters of
+the Prompt Processing system in the Single-Phase \pd
+(CERN experiment \expname), and one particular design option for such system
+based on prioritized queue. We start with a brief summary of the data characteristics and data handling patterns
 as documented in DocDB\,1086 \cite{docdb1086}, DocDB\,1212 \cite{docdb1212} and present a design which
 satisfies the basic requirements set forth in  DocDB 1811 \cite{docdb1811}.
 \end{abstract}
@@ -162,6 +163,7 @@ be optimal to combine these two steps in a single unit of execution.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Design Parameters}
+\label{sec:parameters}
 \subsection{Staging Data for Prompt Processing}
 CERN EOS appears to be the best suited platform from which to
 serve the data for prompt processing for the following reasons:
@@ -232,9 +234,13 @@ the system can be created with minimal effort.
 \subsection{Computing Resources}
 The following computing resources are being considered for prompt processing:
 \begin{itemize}
+
 \item The ``neut'' cluster  \cite{neut} at CERN (HTCondor)
+
 \item The lxbatch facility \cite{lxbatch} at CERN (LSF)
+
 \item Potentially, resources at a few US institutions such as FNAL and BNL.  This option is facilitated by utilizing EOS interfaces such as XRootD.
+
 \end{itemize}
 
 \noindent Optimally, these resources will be managed transparently in one unified system and the workload
@@ -247,6 +253,23 @@ components (such as those in DAQ) will be addressed at a later time.
 
 The prompt processing system will need to interface with the data handling system (i.e.~F-FTS). A simple example
 would be prevention of the data being purged from EOS while it's still needed for processing.
+
+\section{Proposed Design}
+\label{sec:design}
+Most important of the design parameters itemized in Sec.\ref{sec:parameters} are
+
+\begin{itemize}
+
+\item An assumption that a data transfer system won't be needed for the operation of prompt
+processing since the data will be read from and written to CERN EOS
+
+\item The workflow and its elements can be modeled as a DAG (\ref{sec:dag}).
+
+\item Payloads within the prompt processing workflow will need to be prioritized to ensure
+the quickest turnaround time possible given the resources available
+
+\end{itemize}
+
 
 \begin{thebibliography}{1}
 \bibitem{docdb1086}
