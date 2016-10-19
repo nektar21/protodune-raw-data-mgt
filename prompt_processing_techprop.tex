@@ -134,20 +134,17 @@ Also, there could be a potential for large processing efficiency
 gains to be made if the entire data can be run through the \textit{Sig} processing followed by ZS.
 
 
-\subsubsection{Placeholder}
-\begin{figure}[tbh]
-  \centering
-  \includegraphics[width=0.7\textwidth]{figures/big-picture.pdf}
-  \caption{Place of the buffer in the data transmission chain for \expname.}
-  \label{fig:big-picture}
-\end{figure}
-
 \subsection{Prompt Processing as a DAG}
 \label{sec:dag}
 Data and processes involved in prompt processing as outlined in \ref{sec:outline} can be
-modeled together as a DAG.
+modeled together as a DAG.An example of such a model is given in Fig.\ref{fig:dag1}.
 
-
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=1.0\textwidth]{figures/prompt_dag_1.pdf}
+  \caption{An example of DAG representing prompt processing in \expname.}
+  \label{fig:dag1}
+\end{figure}
 \section{Design Parameters}
 \subsection{Staging Data for Prompt Processing}
 CERN EOS appears to be the best suited platform from which to
