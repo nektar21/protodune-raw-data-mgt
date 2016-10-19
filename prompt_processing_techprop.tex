@@ -24,7 +24,7 @@
 \noindent  This note describes a proposal for the design of
 the prompt processing system in the Single-Phase \pd
 (CERN experiment \expname). We start with a brief summary of the data characteristics and data handling patterns
-as documented in \pd (DocDB\,1086 \cite{docdb1086}, DocDB\,1212 \cite{docdb1212}) and present a design which
+as documented in DocDB\,1086 \cite{docdb1086}, DocDB\,1212 \cite{docdb1212} and present a design which
 satisfies the basic requirements set forth in  DocDB 1811 \cite{docdb1811}.
 \end{abstract}
 
@@ -32,11 +32,11 @@ satisfies the basic requirements set forth in  DocDB 1811 \cite{docdb1811}.
 \section{Overview}
 \subsection{Data Scenarios and Data Handling}
 \label{sec:rawdata}
-Scenarios for data taking in \pd are collected and maintained in \cite{docdb1086}. The following parameters
+Quantitative information about scenarios for data taking in \pd is collected and maintained in \cite{docdb1086}. The following parameters
 are assumed at the time of writing: the raw data rate will 1.4\,GB/s after lossless compression, and to size up
 the system and account for contingencies rates up to 3\,GB/s are under consideration.
 
-Outline of the design of the data handling system is documented in  \cite{docdb1212} and other prior \pd documentation.
+Outline of the design of the raw data handling system is documented in  \cite{docdb1212} and other prior \pd documentation.
 According to it, the data is tranmitted from the online buffer to the CERN EOS via a 20 Gbps full-duplex network connection.
 The EOS system serves as the hub and staging area for the \pd raw data from which
 it gets committed to the tape archive at CERN and also transmitted to FNAL and potentially
@@ -48,7 +48,10 @@ other US and international locations. All or most links in the data transmission
 According to \cite{docdb1811}  prompt processing needs to occur on the scale
 of tens of minutes (or better) from the time the data was taken. It's purpose is to
 provide a more in-depth data QA and assessment of the detector operating conditions
-than is afforded by most basic histogrammin e.g. of the ADC counts.
+than is afforded by most basic histogramming e.g. of the ADC counts. Most calculations
+done as a part of prompt processing will result in some sort of a ``visual product'', i.e. a histogram,
+plot, event display or a summary table in order to provide optimal accessibility to the experiment
+operators.
 
 
 \subsubsection{Staging Data for Prompt Processing}
@@ -67,12 +70,13 @@ the latency due to this transfer is acceptable.
 \end{itemize}
 
 
-\subsection{Content of the Prompt Processing}
+\subsection{Scope of the Prompt Processing}
 This is a compressed summary of information presented in \cite{docdb1811}.
 For more detailed explanation please see the source.
 
 \subsubsection{Data Processing}
- The categories are as follows:
+\label{sec:categories}
+The categories are as follows:
 
 \begin{description}
 
@@ -100,17 +104,18 @@ It may, for  example, provide a coarse count of straight muon track candidates.
 
 
 \subsubsection{Downsampling}
+\label{sec:downsampling}
 The categories of processing as outlined above may have drastically different resource requirements.
 %i.e. the ability to select a fractional sample of the data stream as is progresses through the chain, at every stage.
 For example, if 100 cores are allocated to FFT calculation this may be done for approximately 10\% of the events
 in streaming mode. Then, depending on the type of deconvolution being employed (1D vs 2D) this step
 may require an order of magnitude more CPU to complete. To stay within reasonable footprint,
-it is likely to become necessary to put only a fraction of the output of the FFT stage through deconvolution.
-Event reconstruction will require additional CPU and so it may also be necessary to scale down the number of
-events at this stage. So effectively we are considering ``downsampling'' of data as it progresses
-in the promp processing chain. This is primarily motivated by the FFT stage being very desirable for
-every TPC channel, while deconvolution can be done less frequently for more detailed QA and so on
-and so forth.
+it may be necessary to put only a fraction of the output of the FFT stage through deconvolution stage
+(note that the FFT output is valuable in and by itself). Event reconstruction will in turn require even more CPU
+and so it may also be necessary to scale down the number of
+events at this stage (while still aiming for quick turnaround). So effectively we are considering ``downsampling''
+of data as it progresses in the prompt processing chain.
+
 
 
 \subsubsection{Visualization}
@@ -137,9 +142,30 @@ It may include items such as:
 \end{itemize}
 
 \subsubsection{Other Applications of the Data Processing Components}
-Results of the intermediate stages of Data Processing may not need to be preserved.
-However, it is worth noting that there is a potential for large processing efficiency
+Results of the intermediate stages of Data Processing may need to be preserved, for
+example the data in graphic form for audit/run documentation purposes.
+Also, there could be a potential for large processing efficiency
 gains to be made if the entire data can be run through the \textit{Sig} processing followed by ZS.
+
+\subsubsection{Prioritization of Processing Steps}
+Quick turnaround is the key for the prompt processing to be useful. For each processing category
+to be complete it must include the visualization component in order to make the results available
+to the experts. What fraction of the total stream of events ends up being processed is relatvely less
+important compared to timely completion of all steps (NB. with downsampling of the data, see 
+\ref{sec:downsampling}).
+
+A use case may help to illustrate this. Let's assume a predetermined fraction of the events needs to
+be reconstructed (perhaps with simplified algorithm aimed at identifying cosmic muon candidates).
+This information needs to be provided to the operators in order to ascertain the performance
+of the detector at a level of confidence much higher than that provided by ADC histograms.
+Consider the case where the \textbf{FFT} and \textbf{Sig} parts (see \ref{sec:categories})
+completed satisfactorily but are consuming a fraction of the computing resource so large that
+the  \textbf{Reco} stage is starved of resources and takes a very long time to complete, making
+it less relevant and less useful. This situation can be prevented by prioritizing each step higher
+than the preceding one (again, with downsampling as per \ref{sec:downsampling}).
+
+It is therefore necessary to provide a mechanism for flexible prioritization of the different
+classes of jobs running in the prompt processing system.
 
 \section{Design Parameters}
 
