@@ -28,7 +28,8 @@ as documented in DocDB\,1086 \cite{docdb1086}, DocDB\,1212 \cite{docdb1212} and 
 satisfies the basic requirements set forth in  DocDB 1811 \cite{docdb1811}.
 \end{abstract}
 
-%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Overview}
 \subsection{Data Scenarios and Data Handling}
 \label{sec:rawdata}
@@ -42,13 +43,13 @@ The EOS system serves as the hub and staging area for the \pd raw data from whic
 it gets committed to the tape archive at CERN and also transmitted to FNAL and potentially
 other US and international locations. All or most links in the data transmission chain will be based on F-FTS.
 
-\subsection{Outline of Prompt Processing}
+\subsection{Goals}
 \label{sec:outline}
 According to \cite{docdb1811}  prompt processing needs to occur on the scale
 of tens of minutes (or better) from the time the data was taken. It's purpose is to
-provide a more in-depth data QA and assessment of the detector operating conditions
-than is afforded by most basic histogramming e.g. of the ADC counts. Most calculations
-done as a part of prompt processing will result in some sort of a ``visual product'', i.e. a histogram,
+provide a more in-depth data QA and assessment of the detector's health and operating conditions
+than is afforded by most basic histogramming e.g.~of the ADC counts in individual channels. Most calculations
+done as a part of prompt processing will result in some sort of a ``visual product'', for example a histogram,
 plot, event display or a summary table in order to provide optimal accessibility to the experiment
 operators.
 
@@ -105,6 +106,8 @@ of data as it progresses in the prompt processing chain.
 
 
 \subsubsection{Visualization}
+\label{sec:viz_intro}
+
 The \textit{Visualization} category of processing
  may take data output from any of the above listed stages in
 order to efficiently present it to the end-user. 
@@ -122,8 +125,8 @@ It may include items such as:
 
 \item Various statistics dynamically updated over some some fixed time window.
 
-\item 2D displays of underlying values such as spectrograms of the \textit{FFT}
-  output (vs wire), or time vs wire using output from \textit{ADC} and \textit{Sig}.
+\item 2D displays of underlying values such as spectrograms of the \textbf{FFT}
+  output (vs wire), or time vs wire using output from \textbf{ADC} and \textbf{Sig}.
 
 \end{itemize}
 
@@ -133,18 +136,31 @@ example the data in graphic form for audit/run documentation purposes.
 Also, there could be a potential for large processing efficiency
 gains to be made if the entire data can be run through the \textit{Sig} processing followed by ZS.
 
+Certain portion of log files produced during prompt processing may contain information useful
+for future reference and debugging, so provisions will be made to capture these data.
 
-\subsection{Prompt Processing as a DAG}
+
+\section{Prompt Processing as a DAG}
 \label{sec:dag}
 Data and processes involved in prompt processing as outlined in \ref{sec:outline} can be
-modeled together as a DAG.An example of such a model is given in Fig.\ref{fig:dag1}.
+modeled together as a DAG. An example of such a model is given in Fig.\ref{fig:dag1}.
+In this diagram, oval shapes represent data, rectangular blocks correspond to
+elements of workload responsible for processing the data and diamonds stand for processes
+which create``visual products'' (see \ref{sec:outline} and \ref{sec:viz_intro}).
+The \textbf{ADC} and \textbf{FFT} components are conflated here for the following reason - while being functionally
+different, both depend on data being decompressed. Since it makes sense to do decompression only once, it may
+be optimal to combine these two steps in a single unit of execution.
+
 
 \begin{figure}[tbh]
   \centering
-  \includegraphics[width=1.0\textwidth]{figures/prompt_dag_1.pdf}
+  \includegraphics[width=1.0\textwidth]{figures/prompt_dag_2.pdf}
   \caption{An example of DAG representing prompt processing in \expname.}
   \label{fig:dag1}
 \end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Design Parameters}
 \subsection{Staging Data for Prompt Processing}
 CERN EOS appears to be the best suited platform from which to
@@ -179,7 +195,9 @@ Consider the case where the \textbf{FFT} and \textbf{Sig} parts (see \ref{sec:ca
 completed satisfactorily but are consuming a fraction of the computing resource so large that
 the  \textbf{Reco} stage is starved of resources and takes a very long time to complete, making
 it less relevant and less useful. This situation can be prevented by prioritizing each step higher
-than the preceding one (again, with downsampling as per \ref{sec:downsampling}).
+than the preceding one (again, with downsampling as per \ref{sec:downsampling}). In many
+cases having a ``visual product'' to present the data to the operator is crucial (e.g. histograms,
+event displays etc) so corresponding processes need to have sufficiently high priority.
 
 It is therefore necessary to provide a mechanism for flexible prioritization of the different
 classes of jobs running in the prompt processing system.
@@ -189,15 +207,15 @@ classes of jobs running in the prompt processing system.
 \subsection{Workflow: Automation And State}
 
 Prompt processing represents a use case quite different from managed production or user analysis, and is closer to
-procesing data in streaming mode. It is rather obvious that manual job submission won't scale to the needs
-of the experiment, and it will be necessary to automate the prompt processing workflow.
+procesing data in streaming mode. It is rather obvious that in this situation manual job submission won't scale to the
+needs of the experiment, and it will be necessary to automate the prompt processing workflow.
 
-Automation can be achieved in  number of different ways. In the simples case, processes belonging to a particular stage of processing
-can be waiting for files produced by the previous
-stage and matching a particular name pattern (in a fashion similar to the ``dropbox'' mechanism). In this case it is the file
-system which keeps the state of the workflow. Consider jobs performing calculations in the \textbf{Sig} stage that are waiting for
-files containing the output of the \textbf{FFT} stage.
-These scheme is conceptually simple but has a number of disadvantages, such as
+Automation can be achieved in  number of different ways. In the simples case, processes belonging to a particular stage
+of processing can be waiting for files produced by the previous stage and matching a particular name pattern
+(in a fashion similar to the ``dropbox'' mechanism). In this case it is effectively the file system which keeps the state o
+ the workflow. Consider jobs performing calculations in the \textbf{Sig} stage that are waiting for files
+containing the output of the \textbf{FFT} stage. These scheme is conceptually simple but has a number of
+disadvantages, such as
 \begin{itemize}
 \item Matching multiple jobs to multiple files is not trivial and there may be race conditions etc
 \item Detection of error status would require additional scripting
