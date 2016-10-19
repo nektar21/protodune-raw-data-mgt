@@ -44,7 +44,6 @@ other US and international locations. All or most links in the data transmission
 
 \subsection{Outline of Prompt Processing}
 \label{sec:outline}
-\subsubsection{Motivation}
 According to \cite{docdb1811}  prompt processing needs to occur on the scale
 of tens of minutes (or better) from the time the data was taken. It's purpose is to
 provide a more in-depth data QA and assessment of the detector operating conditions
@@ -52,22 +51,6 @@ than is afforded by most basic histogramming e.g. of the ADC counts. Most calcul
 done as a part of prompt processing will result in some sort of a ``visual product'', i.e. a histogram,
 plot, event display or a summary table in order to provide optimal accessibility to the experiment
 operators.
-
-
-\subsubsection{Staging Data for Prompt Processing}
-CERN EOS appears to be the best suited platform from which to
-serve the data for prompt processing for the following reasons:
-\begin{itemize}
-
-\item The online buffer is likely to operate at a significant data rate (see above) and additional I/O load on the buffer is undesirable
-due to practical limits on the storage bandwidth and in order to guarantee stability of operation for the online buffer and DAQ in general.
-
-\item It can be be expected that the data arrives to EOS rather quickly after having been captured in the online buffer (e.g.$\sim$1\,min) so
-the latency due to this transfer is acceptable.
-
-\item EOS has variety of interfaces including \xrd which simplifies access from various types of locations (both inside and outside the CERN perimeter).
-
-\end{itemize}
 
 
 \subsection{Scope of the Prompt Processing}
@@ -102,6 +85,9 @@ It may, for  example, provide a coarse count of straight muon track candidates.
 
 \end{description}
 
+
+\noindent It is possible that \textbf{ADC} and \textbf{FFT} stages will be implemented as a single processing
+block since \textbf{FFT} will require uncompressed data in any case.
 
 \subsubsection{Downsampling}
 \label{sec:downsampling}
@@ -147,7 +133,41 @@ example the data in graphic form for audit/run documentation purposes.
 Also, there could be a potential for large processing efficiency
 gains to be made if the entire data can be run through the \textit{Sig} processing followed by ZS.
 
-\subsubsection{Prioritization of Processing Steps}
+
+\subsubsection{Placeholder}
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/big-picture.pdf}
+  \caption{Place of the buffer in the data transmission chain for \expname.}
+  \label{fig:big-picture}
+\end{figure}
+
+\subsection{Prompt Processing as a DAG}
+\label{sec:dag}
+Data and processes involved in prompt processing as outlined in \ref{sec:outline} can be
+modeled together as a DAG.
+
+
+\section{Design Parameters}
+\subsection{Staging Data for Prompt Processing}
+CERN EOS appears to be the best suited platform from which to
+serve the data for prompt processing for the following reasons:
+\begin{itemize}
+
+\item The online buffer is likely to operate at a significant data rate (see above) and additional I/O load on the buffer is undesirable
+due to practical limits on the storage bandwidth and in order to guarantee stability of operation for the online buffer and DAQ in general.
+
+\item It can be be expected that the data arrives to EOS rather quickly after having been captured in the online buffer (e.g.$\sim$1\,min) so
+the latency due to this transfer is acceptable.
+
+\item EOS has variety of interfaces including \xrd which simplifies access from various types of locations (both inside and outside the CERN perimeter).
+Leveraging this capability of EOS will allow to avoid implementaion of a special data transmission handling chain for prompt processing (such as explicit
+file copy to the Worker Node and back).
+
+
+\end{itemize}
+
+\subsection{Prioritization of Processing Steps}
 Quick turnaround is the key for the prompt processing to be useful. For each processing category
 to be complete it must include the visualization component in order to make the results available
 to the experts. What fraction of the total stream of events ends up being processed is relatvely less
@@ -156,7 +176,7 @@ important compared to timely completion of all steps (NB. with downsampling of t
 
 A use case may help to illustrate this. Let's assume a predetermined fraction of the events needs to
 be reconstructed (perhaps with simplified algorithm aimed at identifying cosmic muon candidates).
-This information needs to be provided to the operators in order to ascertain the performance
+This information needs to be made available to the operators as quickly as possbile in order to ascertain the performance
 of the detector at a level of confidence much higher than that provided by ADC histograms.
 Consider the case where the \textbf{FFT} and \textbf{Sig} parts (see \ref{sec:categories})
 completed satisfactorily but are consuming a fraction of the computing resource so large that
@@ -167,20 +187,30 @@ than the preceding one (again, with downsampling as per \ref{sec:downsampling}).
 It is therefore necessary to provide a mechanism for flexible prioritization of the different
 classes of jobs running in the prompt processing system.
 
-\section{Design Parameters}
 
-\subsection{Workflow Automation}
+
+\subsection{Workflow: Automation And State}
 
 Prompt processing represents a use case quite different from managed production or user analysis, and is closer to
-procesing data in streaming mode. For it to be efficient, it will be necessary to automate the workflow.
+procesing data in streaming mode. It is rather obvious that manual job submission won't scale to the needs
+of the experiment, and it will be necessary to automate the prompt processing workflow.
 
-The automation must allow some flexibility in setting what
-sampling fractions are employed.  At least these
-fractions will need to be specified on a per run period basis.  Given
-that some jobs' processing times depend on the data content there may
-be a need for a more dynamic adjustment of the sampling fractions, perhaps
-automated so as to avoid backlogs and provide optimal throughput of the
-overall system.
+Automation can be achieved in  number of different ways. In the simples case, processes belonging to a particular stage of processing
+can be waiting for files produced by the previous
+stage and matching a particular name pattern (in a fashion similar to the ``dropbox'' mechanism). In this case it is the file
+system which keeps the state of the workflow. Consider jobs performing calculations in the \textbf{Sig} stage that are waiting for
+files containing the output of the \textbf{FFT} stage.
+These scheme is conceptually simple but has a number of disadvantages, such as
+\begin{itemize}
+\item Matching multiple jobs to multiple files is not trivial and there may be race conditions etc
+\item Detection of error status would require additional scripting
+\item Likewise, generating a view of workload distribution across the processing stages is possible but requires
+scripting
+\item Changing characteristics of the workload is complicated
+\item Bookkeeping is difficult
+\end{itemize}
+
+\noindent Problems listed above can be alleviated if the state of the workflow is kept in a database.
 
 \subsection{Resource Utilization}
 The system is required to be flexible enough to take advantage of varying type of resources. For example, the ``neut'' cluster at CERN
