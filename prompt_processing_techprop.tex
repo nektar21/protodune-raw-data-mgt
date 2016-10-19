@@ -206,14 +206,14 @@ classes of jobs running in the prompt processing system.
 
 \subsection{Workflow: Automation And State}
 
-Prompt processing represents a use case quite different from managed production or user analysis, and is closer to
-procesing data in streaming mode. It is rather obvious that in this situation manual job submission won't scale to the
+Prompt processing represents a use case quite different from managed production or user analysis, and is 
+in essence procesing data in streaming mode. It is rather obvious that in this situation manual job submission won't scale to the
 needs of the experiment, and it will be necessary to automate the prompt processing workflow.
 
 Automation can be achieved in  number of different ways. In the simples case, processes belonging to a particular stage
 of processing can be waiting for files produced by the previous stage and matching a particular name pattern
-(in a fashion similar to the ``dropbox'' mechanism). In this case it is effectively the file system which keeps the state o
- the workflow. Consider jobs performing calculations in the \textbf{Sig} stage that are waiting for files
+(in a fashion similar to the ``dropbox'' mechanism). In this case it is effectively the file system which keeps the state of
+the workflow. Consider jobs performing calculations in the \textbf{Sig} stage that are waiting for files
 containing the output of the \textbf{FFT} stage. These scheme is conceptually simple but has a number of
 disadvantages, such as
 \begin{itemize}
@@ -225,49 +225,28 @@ scripting
 \item Bookkeeping is difficult
 \end{itemize}
 
-\noindent Problems listed above can be alleviated if the state of the workflow is kept in a database.
+\noindent Problems such as listed above can be alleviated if the state of the workflow is kept in a database.
+An additional and obvious advantage of this approach is that an efficient and responsive Web interface to
+the system can be created with minimal effort.
 
-\subsection{Resource Utilization}
-The system is required to be flexible enough to take advantage of varying type of resources. For example, the ``neut'' cluster at CERN
-is a rather vanilla example of a HTCondor installation. It will be scaled to up to 350 nodes with multiple cores each. It does not have Grid middleware
-installed and technically this should not be necessary since it's local to the data. This implies that it must be possible to generate jobs to
-run on this cluster locally.
-
-Flexibility needs to be retained to utilize the lxbatch facility at CERN or even run jobs on the facilities at FNAL, BNL and other such locations
-in the US and Europe. This is possible by utilizing EOS interfaces such as XRootD.
-
-As mentioned above, it may be required to explore computing resources
-at other institutions.  Such explorations must consider the nominal
-turn around time that makes this processing ``prompt''.
-
-\subsection{Monitoring}
-It will be neccesary to monitor the prompt processing system at a few
-levels, from general availability and throughput of the computing
-element to individual job level and log file information.  A web
-service will be required to ensure optimal and user-friendly interface
-to the monitoring system.
-
-Another web service (potentially integrated with the above) is
-required to display results of the \textit{Vis} stage for use by
-detector experts, commissioning and operations shift workers as well
-as general collaborators who may not be at CERN.  Some requirements
-for this web service(s) are:
-
+\subsection{Computing Resources}
+The following computing resources are being considered for prompt processing:
 \begin{itemize}
-\item Display current and past sets of \textit{Vis} stage outputs.
-\item Automatically (``live'') update key \textit{Vis} results as they become available.
-\item Provide features to navigate to more detailed visualizations based on summaries.
+\item The ``neut'' cluster  \cite{neut} at CERN (HTCondor)
+\item The lxbatch facility \cite{lxbatch} at CERN (LSF)
+\item Potentially, resources at a few US institutions such as FNAL and BNL.  This option is facilitated by utilizing EOS interfaces such as XRootD.
 \end{itemize}
 
+\noindent Optimally, these resources will be managed transparently in one unified system and the workload
+distribution will be dynamically adjustable.
 
-\subsection{Interfaces}
-The prompt processing system will need to interface with the data handling system (\textit{ie} F-FTS/SAM). A simple example
+\subsection{Monitoring, Interfaces and Integration}
+The requirements for the prompt processing monitoring are listed in \cite{docdb1811}.
+The issues of the design of the corresponding web service and integration with other monitoring
+components (such as those in DAQ) will be addressed at a later time.
+
+The prompt processing system will need to interface with the data handling system (i.e.~F-FTS). A simple example
 would be prevention of the data being purged from EOS while it's still needed for processing.
-
-One or more web services, described above, will need access to
-information about the prompt-processing itself as well as the output
-of the \textit{Vis} stage.
-
 
 \begin{thebibliography}{1}
 \bibitem{docdb1086}
@@ -292,6 +271,13 @@ of the \textit{Vis} stage.
 {DUNE DocDB 1811: \textit{Prompt Processing System Requirements for the Single-Phase protoDUNE}}\\
 \url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1811}
 
+\bibitem{neut}
+{Neutrino Computing Cluster at CERN}\\
+\url{https://twiki.cern.ch/twiki/bin/view/CENF/NeutrinoClusterCERN}
+
+\bibitem{lxbatch}
+{The CERN batch computing service}\\
+\url{http://information-technology.web.cern.ch/services/batch}
 
 \end{thebibliography}
 
