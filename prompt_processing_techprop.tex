@@ -91,6 +91,9 @@ It may, for  example, provide a coarse count of straight muon track candidates.
 \noindent It is possible that \textbf{ADC} and \textbf{FFT} stages will be implemented as a single processing
 block since \textbf{FFT} will require uncompressed data in any case.
 
+Note that the categories listed above can be thought of as stages of processing (for the most part), where
+the output of a stage serves as input to the next one. This can be conceptualized as a DAG (see \ref{sec:dag}).
+
 \subsubsection{Downsampling}
 \label{sec:downsampling}
 The categories of processing as outlined above may have drastically different resource requirements.
@@ -289,12 +292,21 @@ here is \textit{``preemptive''} submission of pilots or jobs such that the laten
 execution is minimal. The pilot vs job decision will be made at a later time.
 
 \subsection{Job Queues}
+The number of jobs assigned to each category listed in \ref{sec:categories} will be optimized based
+on the eventual design of the processing software. For now the working assumption is that it will
+be configurable so the exact number does not need to be set at this time.
+
+Each job is characterized as its type (category), state, and references to its input and output data.
+Jobs belonging to different categories are chained (see \ref{sec:categories} and \ref{sec:dag}). This is
+visualized in the digram presented in Fig.\ref{fig:queues1}, which depicts three queues each containing
+jobs of a specific type. For example, if we assume the DAQ depicted in Fig.\ref{fig:dag1} ``Type 1''
+is \textbf{ADC/FFT}, ``Type 2'' is \textbf{Sig}, and ``Type 3'' is \textbf{Reco}.
 
 \begin{figure}[tbh]
   \centering
   \includegraphics[width=1.0\textwidth]{figures/prompt_queues_1.pdf}
-  \caption{An example of DAG representing prompt processing in \expname.}
-  \label{fig:dag1}
+  \caption{Catergories of prompt processing jobs grouped in queues.}
+  \label{fig:queues1}
 \end{figure}
 
 \begin{thebibliography}{1}
