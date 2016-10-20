@@ -12,7 +12,7 @@
 \newcommand{\xrd}{XRootD\xspace}
 \newcommand{\expname}{\textit{NP04}\xspace}
 
-\title{Design of the Prompt Processing System in the Single-Phase \pd experiment (\expname)}
+\title{A Design of the Prompt Processing System for the Single-Phase \pd experiment (\expname)}
 \date{\today}
 \author{M.\,Potekhin and B.\,Viren}
 
@@ -94,7 +94,7 @@ block since \textbf{FFT} will require uncompressed data in any case.
 Note that the categories listed above can be thought of as stages of processing (for the most part), where
 the output of a stage serves as input to the next one. This can be conceptualized as a DAG (see \ref{sec:dag}).
 
-\subsubsection{Downsampling}
+\subsubsection{Sampling the data}
 \label{sec:downsampling}
 The categories of processing as outlined above may have drastically different resource requirements.
 %i.e. the ability to select a fractional sample of the data stream as is progresses through the chain, at every stage.
@@ -102,11 +102,19 @@ For example, if 100 cores are allocated to FFT calculation this may be done for 
 in streaming mode. Then, depending on the type of deconvolution being employed (1D vs 2D) this step
 may require an order of magnitude more CPU to complete. To stay within reasonable footprint,
 it may be necessary to put only a fraction of the output of the FFT stage through deconvolution stage
-(note that the FFT output is valuable in and by itself). Event reconstruction will in turn require even more CPU
+(note that the FFT output is valuable in and by itself since it allows to ascertain noise conditions in individual channels
+on a continuous basis). Event reconstruction will in turn require even more CPU
 and so it may also be necessary to scale down the number of
 events at this stage (while still aiming for quick turnaround). So effectively we are considering ``downsampling''
-of data as it progresses in the prompt processing chain.
+of data as it progresses in the prompt processing chain, whereby a certain predetermined fraction of the data
+produced in a prompt processing stage is selected for processing in the next stage.
+This can be achieved by two methods or some combination of the two:
+\begin{itemize}
+\item Selecting a fraction of files produced by the previous stage
+\item Reading only a fraction of events from a given input file
+\end{itemize}
 
+\noindent Parameters governing this fractional data selection must be dynamically configurable.
 
 
 \subsubsection{Visualization}
@@ -187,6 +195,7 @@ chain for prompt processing (such as explicit file copy to the Worker Node and b
 \end{itemize}
 
 \subsection{Prioritization of Processing Steps}
+\label{sec:priority}
 Quick turnaround is the key for the prompt processing to be useful. For each processing category
 to be complete it must include the visualization component in order to make the results available
 to the experts. What fraction of the total stream of events ends up being processed is relatvely less
@@ -208,6 +217,12 @@ event displays etc) so corresponding processes need to have sufficiently high pr
 It is therefore necessary to provide a mechanism for flexible prioritization of the different
 classes of jobs running in the prompt processing system.
 
+\subsection{Timeout}
+There can be various reasons why a job may take than is practical, thus consuming valuable resources
+and creating a bottleneck -- from bugs in software to a type of event which is genuinly difficult to reconstruct.
+These jobs need to be triaged, diagnozed and documented separately from the main workflow and perhaps
+using a different computing resource. For this reason, maximum allowed execution time (effectively a timeout)
+will need to be set for each processing category in prompt processing chain.
 
 
 \subsection{Workflow: Automation And State}
@@ -218,9 +233,9 @@ needs of the experiment, and it will be necessary to automate the prompt process
 
 Automation can be achieved in  number of different ways. In the simples case, processes belonging to a particular stage
 of processing can be waiting for files produced by the previous stage and matching a particular name pattern
-(in a fashion similar to the ``dropbox'' mechanism). In this case it is effectively the file system which keeps the state of
-the workflow. Consider jobs performing calculations in the \textbf{Sig} stage that are waiting for files
-containing the output of the \textbf{FFT} stage. These scheme is conceptually simple but has a number of
+(in a fashion similar to the ``dropbox'' mechanism). This design eschews the use of a database and it is effectively
+the file system which keeps the state of the workflow. For example, jobs performing calculations in the \textbf{Sig}
+stage could be waiting for files containing the output of the \textbf{FFT} stage. These scheme is conceptually simple but has a number of
 disadvantages, such as
 \begin{itemize}
 \item Matching multiple jobs to multiple files is not trivial and there may be race conditions etc
@@ -266,22 +281,26 @@ Most important of the design parameters itemized in Sec.\ref{sec:parameters} are
 \begin{itemize}
 
 \item An assumption that a dedicated data transfer system won't be needed for the
-operation of prompt processing since the data will be read from and written to CERN EOS
+operation of prompt processing since the data will be read from and written to CERN EOS.
 
-\item The workflow and its elements can be modeled as a DAG (Sec.\ref{sec:dag})
+\item The workflow and its elements can be modeled as a DAG (Sec.\ref{sec:dag}).
 
 \item Payloads within the prompt processing workflow will need to be prioritized to ensure
-the quickest turnaround time possible given the resources available
+the quickest turnaround time possible given the resources available.
+
+\item Timeouts will be enforced in each processing stage to ensure reliable throughput. Jobs
+failing due to the timeout conditions will be logged and triaged separately.
 
 \item A database will be used to marshal data to jobs, to keep and account for the states
 of jobs in various stages of processing (including errors and failures),
-and to monitor the progress of execution
+and to monitor the progress of execution.
 
 \end{itemize}
 
 \subsection{Just-in-Time Submission}
+\label{sec:justintime}
 Latencies inherent in any batch system make it problematic to use common batch submission since
-quick tirnaround and throughput are required. A well known method to counter this is the use
+quick turnaround and throughput are required. A well known method to counter this is the use
 of pilot jobs, submitted in advance and securing batch slots. The payloads can be then distributed
 to primed and validated WNs immediately as the input data becimes available, based on the
 desired prioritization of jobs. Alternatively, instead of running pilots it is possible to seed
@@ -296,19 +315,77 @@ The number of jobs assigned to each category listed in \ref{sec:categories} will
 on the eventual design of the processing software. For now the working assumption is that it will
 be configurable so the exact number does not need to be set at this time.
 
-Each job is characterized as its type (category), state, and references to its input and output data.
-Jobs belonging to different categories are chained (see \ref{sec:categories} and \ref{sec:dag}). This is
+Each job is characterized as its type (category), state, and references to its input and output data
+(e.g. PFN or LFN). Jobs belonging to different categories are chained (see \ref{sec:categories} and \ref{sec:dag}). This is
 visualized in the digram presented in Fig.\ref{fig:queues1}, which depicts three queues each containing
-jobs of a specific type. For example, if we assume the DAQ depicted in Fig.\ref{fig:dag1} ``Type 1''
-is \textbf{ADC/FFT}, ``Type 2'' is \textbf{Sig}, and ``Type 3'' is \textbf{Reco}.
+jobs of a specific type.
 
 \begin{figure}[tbh]
   \centering
   \includegraphics[width=1.0\textwidth]{figures/prompt_queues_1.pdf}
-  \caption{Catergories of prompt processing jobs grouped in queues.}
+  \caption{Categories of prompt processing jobs grouped in queues.}
   \label{fig:queues1}
 \end{figure}
 
+For example, if we consider the DAG depicted in Fig.\ref{fig:dag1}, then ``Type 1''
+is \textbf{ADC/FFT}, ``Type 2'' is \textbf{Sig}, and ``Type 3'' is \textbf{Reco}. For illustration purposes,
+the queues in this diagram have different depth (which is likely to happen in practice).
+
+Jobs consume data produced in the previous stage of prompt processing. For that reason, they
+will need to be defined dynamically once a new pirce of input becomes available. For example,
+the attribute $I_{21}$ will be assigned the value of $O_{11}$ once the corresponding $Job_1$ of Type 1
+is complete. Generation of job definition is a crucial part of overall automation of prompt processing.
+
+Keeping fixed numbers of jobs of each type running in the system at all times (with timeouts of necessary)
+is indeed one design option but it may not be optimal since execution times of any job will fluctuate and there
+will likely be idle jobs in some stages waiting for input.
+
+As an alternative, the queues depicted in Fig.\ref{fig:queues1} can be conflated into a single queue
+with priorities assigned to each job along the lines explained in \ref{sec:priority}. This is shown in
+Fig.\ref{fig:queues2}.
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.85\textwidth]{figures/prompt_queues_2.pdf}
+  \caption{The unified queue of prompt processing jobs.}
+  \label{fig:queues2}
+\end{figure}
+Jobs now have additional attributes, such as the type and priority.
+The depth of such queue will be set according to the available number of Worker Nodes assigned for
+prompt processing (e.g. it can be a certain portion of the ``neut'' cluster and a certain number of batch slots on
+lxbatch). There are several ways to ensure that higher priority jobs are placed in the queue (for example by
+dropping jobs of lower priority still in the ``wait'' condition) and the exact method will be chosen at a later time.
+
+Let us assume that the pilot method is chosen for ``just-in-time'' job submission (see \ref{sec:justintime}). In this
+case, the following is a possbile scenario of how this unified queue will operate, assuming it is implemented
+as a database table:
+\begin{itemize}
+
+\item A fixed number of pilot jobs (wrapper scripts) are submitted to the available batch facilities (which can include both
+lxbatch and ``neut'' but potentially also other sites such as FNAL).
+
+\item Data arriving from DAQ and its online buffer to EOS triggers the mechanism which makes entries in the queue for the
+first stage of processing (e.g. ADC/FFT).
+
+\item A broker process is listening to HTTP messages from the pilots signaling that they are ready to accept their payload.
+
+\item A table sweep selects the job entries of the highest priority and replies to the pilot's HTTP request with information
+sufficient for locating and initiating the correct payload (this can be a URL point to a script etc).
+
+\item Upon the payload assignment, the pilot notifies the broker about its status and the state of the job (e.g.
+that the execution started, or some kind of error was encountered).
+
+\item The job record is then updated based on this information. For example, the state of the job can undergo the following
+transitions  during the process described above: from ``waiting'' state to ``being assigned'' state to ``running'' state.
+
+\item Upon completion, the pilot send notification to the broker, the queue is updated with the state infor (the job is ``finished'') and
+a new entry is made in the queue for the next stage of processing, with input defined as the data coming from the stage that just completed.
+
+\item This process is iterative by nature, i.e.~the following stages operate in the same manner as links in the processing chain.
+
+\end{itemize}
+
+
+\clearpage
 \begin{thebibliography}{1}
 \bibitem{docdb1086}
 {DUNE DocDB 1086: \textit{ protoDUNE/SP data scenarios with full stream (spreadsheet)}}\\
