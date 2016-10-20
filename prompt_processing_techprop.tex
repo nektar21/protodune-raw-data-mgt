@@ -175,9 +175,10 @@ due to practical limits on the storage bandwidth and in order to guarantee stabi
 \item It can be be expected that the data arrives to EOS rather quickly after having been captured in the online buffer (e.g.$\sim$1\,min) so
 the latency due to this transfer is acceptable.
 
-\item EOS has variety of interfaces including \xrd which simplifies access from various types of locations (both inside and outside the CERN perimeter).
-Leveraging this capability of EOS will allow to avoid implementaion of a special data transmission handling chain for prompt processing (such as explicit
-file copy to the Worker Node and back).
+\item EOS has variety of interfaces including \xrd \cite{xrootd} which simplifies access from various types of
+systems and  locations (both inside and outside the CERN perimeter).
+Leveraging this capability of EOS will allow to avoid implementaion of a special data transmission handling
+chain for prompt processing (such as explicit file copy to the Worker Node and back).
 
 
 \end{itemize}
@@ -260,13 +261,16 @@ Most important of the design parameters itemized in Sec.\ref{sec:parameters} are
 
 \begin{itemize}
 
-\item An assumption that a data transfer system won't be needed for the operation of prompt
-processing since the data will be read from and written to CERN EOS
+\item An assumption that a dedicated data transfer system won't be needed for the
+operation of prompt processing since the data will be read from and written to CERN EOS
 
-\item The workflow and its elements can be modeled as a DAG (\ref{sec:dag}).
+\item The workflow and its elements can be modeled as a DAG (Sec.\ref{sec:dag})
 
 \item Payloads within the prompt processing workflow will need to be prioritized to ensure
 the quickest turnaround time possible given the resources available
+
+\item A database will be used to marshal data to jobs, to keep and account for the states
+of jobs in various stages of processing, and to monitor the execution
 
 \end{itemize}
 
@@ -293,6 +297,11 @@ the quickest turnaround time possible given the resources available
 \bibitem{docdb1811}
 {DUNE DocDB 1811: \textit{Prompt Processing System Requirements for the Single-Phase protoDUNE}}\\
 \url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1811}
+
+
+\bibitem{xrootd}
+{XRootD}\\
+\url{http://www.xrootd.org}
 
 \bibitem{neut}
 {Neutrino Computing Cluster at CERN}\\
