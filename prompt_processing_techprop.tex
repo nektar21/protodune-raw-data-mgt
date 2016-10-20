@@ -299,16 +299,19 @@ and to monitor the progress of execution.
 
 \subsection{Just-in-Time Submission}
 \label{sec:justintime}
-Latencies inherent in any batch system make it problematic to use common batch submission since
-quick turnaround and throughput are required. A well known method to counter this is the use
-of pilot jobs, submitted in advance and securing batch slots. The payloads can be then distributed
-to primed and validated WNs immediately as the input data becimes available, based on the
-desired prioritization of jobs. Alternatively, instead of running pilots it is possible to seed
-the available compute element with a few classes of jobs according to \ref{sec:categories} and
+Latencies inherent in any batch system make it problematic to use common batch submission directly
+since quick turnaround and throughput are required. A well known method to counter this is the use
+of pilot jobs, submitted in advance and securing batch slots while optionally validating the software
+environment present on the Worker Node, network connectivity and other components. The
+payloads can be then distributed to primed and validated WNs immediately as the input data becomes
+available, based on the desired prioritization of jobs. Alternatively, instead of running pilots it is possible to
+seed the available compute element with a few classes of jobs according to \ref{sec:categories} and
 let them wait till the relevant input arrives, or they time out -- this will help guarantee that
 CPU cycles are not wasted by idling jobs (same actually applies to pilots). Either way, the key
 here is \textit{``preemptive''} submission of pilots or jobs such that the latency of the start of job
-execution is minimal. The pilot vs job decision will be made at a later time.
+execution is minimal. The pilot vs job decision will be made at a later time. Let us note for now that
+the pilot method offers considerably more flexibility in adding additional types of jobs (payloads)
+to the processing chain and modifying the distribution of resources across these different types.
 
 \subsection{Job Queues}
 The number of jobs assigned to each category listed in \ref{sec:categories} will be optimized based
@@ -322,14 +325,14 @@ jobs of a specific type.
 
 \begin{figure}[tbh]
   \centering
-  \includegraphics[width=1.0\textwidth]{figures/prompt_queues_1.pdf}
-  \caption{Categories of prompt processing jobs grouped in queues.}
+  \includegraphics[width=1.1\textwidth]{figures/prompt_queues_1.pdf}
+  \caption{Categories of prompt processing jobs grouped in queues. In this example, the depths of queues are different for different job types.}
   \label{fig:queues1}
 \end{figure}
 
 For example, if we consider the DAG depicted in Fig.\ref{fig:dag1}, then ``Type 1''
 is \textbf{ADC/FFT}, ``Type 2'' is \textbf{Sig}, and ``Type 3'' is \textbf{Reco}. For illustration purposes,
-the queues in this diagram have different depth (which is likely to happen in practice).
+the queues in this diagram have different depths $(i,j,k)$  -- which may indeed happen in practice.
 
 Jobs consume data produced in the previous stage of prompt processing. For that reason, they
 will need to be defined dynamically once a new pirce of input becomes available. For example,
@@ -363,6 +366,10 @@ as a database table:
 \item A fixed number of pilot jobs (wrapper scripts) are submitted to the available batch facilities (which can include both
 lxbatch and ``neut'' but potentially also other sites such as FNAL).
 
+\item Because of possible timeouts, completions and error conditions encountered by the pilots their number will naturally
+diminish over time so it must be replenished in order to remain at an appropriate level. This can be achieved by reusing
+existing software created for this purpose in other experiments (e.g. the AutoPyFactory from ATLAS).
+
 \item Data arriving from DAQ and its online buffer to EOS triggers the mechanism which makes entries in the queue for the
 first stage of processing (e.g. ADC/FFT).
 
@@ -382,8 +389,45 @@ a new entry is made in the queue for the next stage of processing, with input de
 
 \item This process is iterative by nature, i.e.~the following stages operate in the same manner as links in the processing chain.
 
+\item The ``visual products'' created throughout the processing chain are exported to a Web service to create the presentation
+layer for the end user.
+
+\item Parts of the output from all stages which are deemed to be of value for record keeping and for additional
+diagnostics are committed to long term storage (possibly utilizing F-FTS and SAM).
+
 \end{itemize}
 
+\section{Summary}
+A design of the Prompt Processing system for \expname is proposed. Variations are possible
+while the version which appears optimal is outlined below:
+
+
+\begin{itemize}
+
+\item The pilot job mechanism is proposed to minimize latencies inherent in the Grid and general batch system job submission.
+A pilot can be thought of as a payload-agnostic wrapper script which includes the functionality necessary to communicate
+with the Web service distributing payloads and keeping the state of the workflow.
+
+\item Arrival of raw data from DAQ triggers generation of entries in the job queue implemented as a database table.
+
+\item Different payloads which are parts of the Prompt Processing system will be assigned different priorities in order to ensure
+adequate throughput and timely delivery of the results to the end user.
+
+\item Payloads are matched to pilots according to priorities. The pilots initiate the execution on the WNs where they run.
+
+\item The state of each job is updated in the database based on messages received from the pilot.
+
+\item The database also serves as the basis for the monitoring monitoring and debugging.
+
+\item Completion of each job results in adding another entry to the queue with priority set according to the processing stage as
+explained in \ref{sec:priority} (unless this is a leaf in the DAG describing the workflow).
+
+\item Visual products and other data required by the operators of the experiment is made available via a Web service.
+A predetermined fraction of the data produced by various stages of the prompt processing is committed to long storage
+for record keeping.
+
+
+\end{itemize}
 
 \clearpage
 \begin{thebibliography}{1}
