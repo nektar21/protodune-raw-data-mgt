@@ -255,8 +255,9 @@ components (such as those in DAQ) will be addressed at a later time.
 The prompt processing system will need to interface with the data handling system (i.e.~F-FTS). A simple example
 would be prevention of the data being purged from EOS while it's still needed for processing.
 
-\section{Proposed Design}
+\section{The Proposed Design}
 \label{sec:design}
+\subsection{Summary of the Assumptions}
 Most important of the design parameters itemized in Sec.\ref{sec:parameters} are
 
 \begin{itemize}
@@ -270,10 +271,31 @@ operation of prompt processing since the data will be read from and written to C
 the quickest turnaround time possible given the resources available
 
 \item A database will be used to marshal data to jobs, to keep and account for the states
-of jobs in various stages of processing, and to monitor the execution
+of jobs in various stages of processing (including errors and failures),
+and to monitor the progress of execution
 
 \end{itemize}
 
+\subsection{Just-in-Time Submission}
+Latencies inherent in any batch system make it problematic to use common batch submission since
+quick tirnaround and throughput are required. A well known method to counter this is the use
+of pilot jobs, submitted in advance and securing batch slots. The payloads can be then distributed
+to primed and validated WNs immediately as the input data becimes available, based on the
+desired prioritization of jobs. Alternatively, instead of running pilots it is possible to seed
+the available compute element with a few classes of jobs according to \ref{sec:categories} and
+let them wait till the relevant input arrives, or they time out -- this will help guarantee that
+CPU cycles are not wasted by idling jobs (same actually applies to pilots). Either way, the key
+here is \textit{``preemptive''} submission of pilots or jobs such that the latency of the start of job
+execution is minimal. The pilot vs job decision will be made at a later time.
+
+\subsection{Job Queues}
+
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=1.0\textwidth]{figures/prompt_queues_1.pdf}
+  \caption{An example of DAG representing prompt processing in \expname.}
+  \label{fig:dag1}
+\end{figure}
 
 \begin{thebibliography}{1}
 \bibitem{docdb1086}
