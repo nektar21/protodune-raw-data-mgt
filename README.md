@@ -16,9 +16,10 @@ This repository contains documents for a proposed raw data managment system and 
 
 * *neut-buffer.tex* describes a concrete implementation of a xrootd storage cluster at CERN which is a candidate for the single-phase protoDUNE online buffer. Obsolete dut to design decisions as described above.
 
-##Workflow##
-Documents whose names starts with "prompt" are related to the prompt processing system for protoDUNE
+###Workflow###
+* Documents whose names starts with "prompt" are related to the prompt processing system for protoDUNE. These currently include requirements and a design proposal (as an outline).
 
+###Graphic###
 * the folder *"figures"* contains graphics to all of these documents
 
 ## Built PDFs
