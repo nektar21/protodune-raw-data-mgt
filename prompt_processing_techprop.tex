@@ -25,8 +25,9 @@
 the Prompt Processing system in the Single-Phase \pd
 (CERN experiment \expname), and one particular design option for such system
 based on prioritized queue. We start with a brief summary of the data characteristics and data handling patterns
-as documented in DocDB\,1086 \cite{docdb1086}, DocDB\,1212 \cite{docdb1212} and present a design which
-satisfies the basic requirements set forth in  DocDB 1811 \cite{docdb1811}.
+as documented in DocDB\,1086 \cite{docdb1086}, DocDB\,1212 \cite{docdb1212} and present
+the basic requirements as per  DocDB 1811 \cite{docdb1811}. A design is proposed which satisfies 
+these requirements.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -94,7 +95,7 @@ block since \textbf{FFT} will require uncompressed data in any case.
 Note that the categories listed above can be thought of as stages of processing (for the most part), where
 the output of a stage serves as input to the next one. This can be conceptualized as a DAG (see \ref{sec:dag}).
 
-\subsubsection{Sampling the data}
+\subsubsection{Sampling (pre-scaling) the Data in the Prompt Processing Chain}
 \label{sec:downsampling}
 The categories of processing as outlined above may have drastically different resource requirements.
 %i.e. the ability to select a fractional sample of the data stream as is progresses through the chain, at every stage.
@@ -106,9 +107,10 @@ it may be necessary to put only a fraction of the output of the FFT stage throug
 on a continuous basis). Event reconstruction will in turn require even more CPU
 and so it may also be necessary to scale down the number of
 events at this stage (while still aiming for quick turnaround). So effectively we are considering ``downsampling''
+or ``prescaling'' 
 of data as it progresses in the prompt processing chain, whereby a certain predetermined fraction of the data
 produced in a prompt processing stage is selected for processing in the next stage.
-This can be achieved by two methods or some combination of the two:
+This can be achieved by two methods or some combination thereof:
 \begin{itemize}
 \item Selecting a fraction of files produced by the previous stage
 \item Reading only a fraction of events from a given input file
@@ -319,7 +321,7 @@ on the eventual design of the processing software. For now the working assumptio
 be configurable so the exact number does not need to be set at this time.
 
 Each job is characterized as its type (category), state, and references to its input and output data
-(e.g. PFN or LFN). Jobs belonging to different categories are chained (see \ref{sec:categories} and \ref{sec:dag}). This is
+(e.g.file paths for input and output). Jobs belonging to different categories are chained (see \ref{sec:categories} and \ref{sec:dag}). This is
 visualized in the digram presented in Fig.\ref{fig:queues1}, which depicts three queues each containing
 jobs of a specific type.
 
@@ -371,7 +373,10 @@ diminish over time so it must be replenished in order to remain at an appropriat
 existing software created for this purpose in other experiments (e.g. the AutoPyFactory from ATLAS).
 
 \item Data arriving from DAQ and its online buffer to EOS triggers the mechanism which makes entries in the queue for the
-first stage of processing (e.g. ADC/FFT).
+first stage of processing (e.g. ADC/FFT). Entries for this first stage are arraned in the LIFO manner. In other words, preference
+in the queue order is given to the most recent data detected, in order to ensure that the output contains the freshest
+data to help the processing remain prompt and current. Note that this is different from conventional production or analysis --
+first of all, processing is done on a fraction of data, and second, the data is prioritized by its timestamp.
 
 \item A broker process is listening to HTTP messages from the pilots signaling that they are ready to accept their payload.
 
@@ -384,7 +389,7 @@ that the execution started, or some kind of error was encountered).
 \item The job record is then updated based on this information. For example, the state of the job can undergo the following
 transitions  during the process described above: from ``waiting'' state to ``being assigned'' state to ``running'' state.
 
-\item Upon completion, the pilot send notification to the broker, the queue is updated with the state infor (the job is ``finished'') and
+\item Upon completion, the pilot send notification to the broker, the queue is updated with the state information (the job is ``finished'') and
 a new entry is made in the queue for the next stage of processing, with input defined as the data coming from the stage that just completed.
 
 \item This process is iterative by nature, i.e.~the following stages operate in the same manner as links in the processing chain.
@@ -393,16 +398,19 @@ a new entry is made in the queue for the next stage of processing, with input de
 layer for the end user.
 
 \item Parts of the output from all stages which are deemed to be of value for record keeping and for additional
-diagnostics are committed to long term storage (possibly utilizing F-FTS and SAM).
+diagnostics are committed to long term storage (possibly utilizing F-FTS and SAM). This functionality can be included
+in the general cleanup logic -- most of the data in the chain won't need to be persisted and can be deleted once
+execution of the corresponding DAG completes, while a few data elements will be sent to storage. This can be
+implemented as a periodic table sweep and application of rules which will be configurable.
 
 \end{itemize}
 
 \section{Summary}
 A design of the Prompt Processing system for \expname is proposed. Variations are possible
-while the version which appears optimal is outlined below:
+while the version which currently appears optimal is outlined below:
 
 
-\begin{itemize}
+\begin{enumerate}
 
 \item The pilot job mechanism is proposed to minimize latencies inherent in the Grid and general batch system job submission.
 A pilot can be thought of as a payload-agnostic wrapper script which includes the functionality necessary to communicate
@@ -411,9 +419,15 @@ with the Web service distributing payloads and keeping the state of the workflow
 \item Arrival of raw data from DAQ triggers generation of entries in the job queue implemented as a database table.
 
 \item Different payloads which are parts of the Prompt Processing system will be assigned different priorities in order to ensure
-adequate throughput and timely delivery of the results to the end user.
+adequate throughput and timely delivery of the results to the end user. The priorities may be dynamically changing based on
+the state of the set of DAGs currently being processed. For example, more resources may be allocated to longer DAGs which already
+completed a few stages, in order to reach results more quickly. There may be a few ``hot slots'' left idling to be able to quickly
+start execution of the highest priority jobs (such as the final reconstruction stage). The exact mechanism will be determined
+at a later time.
 
-\item Payloads are matched to pilots according to priorities. The pilots initiate the execution on the WNs where they run.
+\item Payloads are matched to pilots according to priorities.
+
+\item The pilots initiate the execution on the WNs where they run.
 
 \item The state of each job is updated in the database based on messages received from the pilot.
 
@@ -422,12 +436,12 @@ adequate throughput and timely delivery of the results to the end user.
 \item Completion of each job results in adding another entry to the queue with priority set according to the processing stage as
 explained in \ref{sec:priority} (unless this is a leaf in the DAG describing the workflow).
 
-\item Visual products and other data required by the operators of the experiment is made available via a Web service.
+\item Visual products and other data required by the operators of the experiment are made available via a Web service.
 A predetermined fraction of the data produced by various stages of the prompt processing is committed to long storage
 for record keeping.
 
 
-\end{itemize}
+\end{enumerate}
 
 \clearpage
 \begin{thebibliography}{1}
