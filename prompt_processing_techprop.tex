@@ -40,7 +40,7 @@ are assumed at the time of writing: the raw data rate will 1.4\,GB/s after lossl
 the system and account for contingencies rates up to 3\,GB/s are under consideration.
 
 Outline of the design of the raw data handling system is documented in  \cite{docdb1212} and other prior \pd documentation.
-According to it, the data is tranmitted from the online buffer to the CERN EOS via a 20 Gbps full-duplex network connection.
+According to it, the data is transmitted from the online buffer to the CERN EOS via a 20 Gbps full-duplex network connection.
 The EOS system serves as the hub and staging area for the \pd raw data from which
 it gets committed to the tape archive at CERN and also transmitted to FNAL and potentially
 other US and international locations. All or most links in the data transmission chain will be based on F-FTS.
@@ -48,7 +48,7 @@ other US and international locations. All or most links in the data transmission
 \subsection{Goals}
 \label{sec:outline}
 According to \cite{docdb1811}  prompt processing needs to occur on the scale
-of tens of minutes (or better) from the time the data was taken. It's purpose is to
+of tens of minutes (or better) from the time the data was taken. Its purpose is to
 provide a more in-depth data QA and assessment of the detector's health and operating conditions
 than is afforded by most basic histogramming e.g.~of the ADC counts in individual channels. Most calculations
 done as a part of prompt processing will result in some sort of a ``visual product'', for example a histogram,
@@ -80,8 +80,15 @@ transform (FFT) on channel waveforms. This largely  provides measures of noise a
 evolution.
 
 \item[Sig] A summary of the data \textit{after signal processing}.
-The processing is in  frequency space and so uses the output of FFT.  It includes software
-noise subtraction, filtering and deconvolution of the response function.
+The processing is in  both time domain and in frequency domain (so uses the output of FFT).
+It includes items such as
+\begin{itemize}
+\item ``stuck code'' mitigation
+\item coherent noise removal
+\item noise subtraction and filtering
+\item deconvolution of the response function
+\item calculation of signal correlations for diagnostic purposes
+\end{itemize}
 
 \item[Reco] Results from running some type of reconstruction (perhaps simplified).
 It may, for  example, provide a coarse count of straight muon track candidates.
@@ -90,7 +97,9 @@ It may, for  example, provide a coarse count of straight muon track candidates.
 
 
 \noindent It is possible that \textbf{ADC} and \textbf{FFT} stages will be implemented as a single processing
-block since \textbf{FFT} will require uncompressed data in any case.
+block since \textbf{FFT} will require uncompressed data in any case. Likewise, some other stages in the processing
+chain and visualization may be conflated in case writing out intermediate (transient) data creates an I/O bottleneck,
+while still preserving modularity to the largest extent possible. Such design decisions will be made at a later time.
 
 Note that the categories listed above can be thought of as stages of processing (for the most part), where
 the output of a stage serves as input to the next one. This can be conceptualized as a DAG (see \ref{sec:dag}).
@@ -133,9 +142,7 @@ It may include items such as:
 
 \begin{itemize}
 
-\item Histograms of statistical quantities.
-
-\item Strip charts showing their history.
+\item Histograms of statistical quantities and strip charts showing their history.
 
 \item Various statistics dynamically updated over some some fixed time window.
 
@@ -149,7 +156,6 @@ Results of the intermediate stages of Data Processing may need to be preserved, 
 example the data in graphic form for audit/run documentation purposes.
 Also, there could be a potential for large processing efficiency
 gains to be made if the entire data can be run through the \textit{Sig} processing followed by ZS.
-
 Certain portion of log files produced during prompt processing may contain information useful
 for future reference and debugging, so provisions will be made to capture these data.
 
@@ -158,13 +164,6 @@ for future reference and debugging, so provisions will be made to capture these 
 \label{sec:dag}
 Data and processes involved in prompt processing as outlined in \ref{sec:outline} can be
 modeled together as a DAG. An example of such a model is given in Fig.\ref{fig:dag1}.
-In this diagram, oval shapes represent data, rectangular blocks correspond to
-elements of workload responsible for processing the data and diamonds stand for processes
-which create``visual products'' (see \ref{sec:outline} and \ref{sec:viz_intro}).
-The \textbf{ADC} and \textbf{FFT} components are conflated here for the following reason - while being functionally
-different, both depend on data being decompressed. Since it makes sense to do decompression only once, it may
-be optimal to combine these two steps in a single unit of execution.
-
 
 \begin{figure}[tbh]
   \centering
@@ -172,6 +171,12 @@ be optimal to combine these two steps in a single unit of execution.
   \caption{An example of DAG representing prompt processing in \expname.}
   \label{fig:dag1}
 \end{figure}
+In this diagram, oval shapes represent data, rectangular blocks correspond to
+elements of workload responsible for processing the data and diamonds stand for processes
+which create``visual products'' (see \ref{sec:outline} and \ref{sec:viz_intro}).
+The \textbf{ADC} and \textbf{FFT} components are conflated here for the following reason - while being functionally
+different, both depend on data being decompressed. Since it makes sense to do decompression only once, it may
+be optimal to combine these two steps in a single unit of execution.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -222,7 +227,7 @@ classes of jobs running in the prompt processing system.
 \subsection{Timeout}
 There can be various reasons why a job may take than is practical, thus consuming valuable resources
 and creating a bottleneck -- from bugs in software to a type of event which is genuinly difficult to reconstruct.
-These jobs need to be triaged, diagnozed and documented separately from the main workflow and perhaps
+These jobs need to be triaged, diagnosed and documented separately from the main workflow and perhaps
 using a different computing resource. For this reason, maximum allowed execution time (effectively a timeout)
 will need to be set for each processing category in prompt processing chain.
 
