@@ -14,7 +14,7 @@
 
 \title{A Design of the Prompt Processing System for the Single-Phase \pd experiment (\expname)}
 \date{\today}
-\author{M.\,Potekhin and B.\,Viren}
+\author{N. Benekos, M.\,Potekhin and B.\,Viren}
 
 
 \begin{document}
@@ -163,7 +163,8 @@ for future reference and debugging, so provisions will be made to capture these 
 \section{Prompt Processing as a DAG}
 \label{sec:dag}
 Data and processes involved in prompt processing as outlined in \ref{sec:outline} can be
-modeled together as a DAG. An example of such a model is given in Fig.\ref{fig:dag1}.
+modeled together as a DAG. This is illustrated in Fig.\ref{fig:dag1}
+in the form of a high-level conceptual diagram.
 
 \begin{figure}[tbh]
   \centering
@@ -182,24 +183,38 @@ be optimal to combine these two steps in a single unit of execution.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Design Parameters}
 \label{sec:parameters}
+
 \subsection{Staging Data for Prompt Processing}
+\label{sec:staging}
 CERN EOS appears to be the best suited platform from which to
 serve the data for prompt processing for the following reasons:
 \begin{itemize}
 
-\item The online buffer is likely to operate at a significant data rate (see above) and additional I/O load on the buffer is undesirable
-due to practical limits on the storage bandwidth and in order to guarantee stability of operation for the online buffer and DAQ in general.
+\item The online buffer is likely to operate at a significant data rate (see above) and additional I/O load on the
+buffer is undesirable due to practical limits on the storage bandwidth and in order to guarantee stability of
+operation for the online buffer and DAQ in general.
 
-\item It can be be expected that the data arrives to EOS rather quickly after having been captured in the online buffer (e.g.$\sim$1\,min) so
-the latency due to this transfer is acceptable.
+\item It can be be expected that the data arrives to EOS rather quickly after having been captured in the online buffer
+(e.g.$\sim$1\,min) so the latency due to this transfer is acceptable.
 
 \item EOS has variety of interfaces including \xrd \cite{xrootd} which simplifies access from various types of
-systems and  locations (both inside and outside the CERN perimeter).
-Leveraging this capability of EOS will allow to avoid implementaion of a special data transmission handling
-chain for prompt processing (such as explicit file copy to the Worker Node and back).
-
+systems and  locations (both inside and outside the CERN perimeter). Leveraging this capability of EOS will
+allow to avoid implementaion of a special data transmission handling chain for prompt processing
+(such as explicit file copy to the Worker Node and back).
 
 \end{itemize}
+
+\subsection{Location of the computing resource}
+As noted in \ref{sec:staging} it is undesirable for the prompt processing system to interface the online
+buffer directly due to the substantial additional I/O load on the buffer and its network infrastructure,
+and EOS is the preferred storage system.
+
+This has consequences for the optimal location of the computing resources i.e. the worker nodes
+committed to the system -- they need to be in the network proximity of EOS and not put extra
+load on the network link between \expname and the CERN central services. In practice this means
+that the prompto processing system needs to be located on the CERN main campus (the West Area)
+as opposed to Prevessin (the North Area).
+
 
 \subsection{Prioritization of Processing Steps}
 \label{sec:priority}
@@ -265,17 +280,22 @@ The following computing resources are being considered for prompt processing:
 
 \item The lxbatch facility \cite{lxbatch} at CERN (LSF)
 
-\item Potentially, resources at a few US institutions such as FNAL and BNL.  This option is facilitated by utilizing EOS interfaces such as XRootD.
+\item Potentially, resources at a few US institutions such as FNAL and BNL.  This option is facilitated
+by utilizing EOS interfaces such as XRootD. Since the latency for these resources will be much larger
+than for local ones at CERN, this will only be appropriate for the portions of the workflow which
+are less time critical than others (e.g. visualization and histogramming for long-term record keeping).
 
 \end{itemize}
 
-\noindent Optimally, these resources will be managed transparently in one unified system and the workload
-distribution will be dynamically adjustable.
+\noindent Optimally, all available resources will be managed transparently in one unified system and
+the workload distribution will be dynamically adjustable.
 
 \subsection{Monitoring, Interfaces and Integration}
 The requirements for the prompt processing monitoring are listed in \cite{docdb1811}.
-The issues of the design of the corresponding web service and integration with other monitoring
-components (such as those in DAQ) will be addressed at a later time.
+We propose modular Web interface which can be configured to be used by itself, or integrated
+with other elements of the \expname monitoring. 
+% The issues of the design of the corresponding web service and integration with other monitoring
+% components (such as those in DAQ) will be addressed at a later time.
 
 The prompt processing system will need to interface with the data handling system (i.e.~F-FTS). A simple example
 would be prevention of the data being purged from EOS while it's still needed for processing.
@@ -287,7 +307,7 @@ Most important of the design parameters itemized in Sec.\ref{sec:parameters} are
 
 \begin{itemize}
 
-\item An assumption that a dedicated data transfer system won't be needed for the
+\item An assumption that \textbf{a dedicated data transfer system won't be needed} for the
 operation of prompt processing since the data will be read from and written to CERN EOS.
 
 \item The workflow and its elements can be modeled as a DAG (Sec.\ref{sec:dag}).
