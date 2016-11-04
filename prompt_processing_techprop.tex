@@ -36,14 +36,35 @@ these requirements.
 \subsection{Data Scenarios and Data Handling}
 \label{sec:rawdata}
 Quantitative information about scenarios for data taking in \pd is collected and maintained in \cite{docdb1086}. The following parameters
-are assumed at the time of writing: the raw data rate will 1.4\,GB/s after lossless compression, and to size up
+are assumed at the time of writing: the raw data rate
+produced by the LArTPC will be $\sim$1.4\,GB/s after lossless compression, and to size up
 the system and account for contingencies rates up to 3\,GB/s are under consideration.
+Rates and volume of data coming from other detector components will be much smaller
+and won't effect the overall scale of the data handling and processing system.
 
 Outline of the design of the raw data handling system is documented in  \cite{docdb1212} and other prior \pd documentation.
 According to it, the data is transmitted from the online buffer to the CERN EOS via a 20 Gbps full-duplex network connection.
 The EOS system serves as the hub and staging area for the \pd raw data from which
 it gets committed to the tape archive at CERN and also transmitted to FNAL and potentially
 other US and international locations. All or most links in the data transmission chain will be based on F-FTS.
+
+\subsection{Data Streams}
+\label{sec:streams}
+
+For reasons that are outside of the scope of this paper the experimental raw data in \expname will come
+as three distinct streams at the time they are captured:
+\begin{itemize}
+\item The LArTPC stream which is the dominant in terms of rate and volume
+\item \textbf{BI} (Beam Instrumentation) Stream containing data from Cherenkov and TOF systems
+\item \textbf{CRT} (Cosmic Ray Tagger)
+\end{itemize}
+
+\noindent All three streams will follow a similar path in that they will be transmitted from their respective
+online buffers to mass storage (which in this case is EOS, see \ref{sec:staging}). An important differentiating
+frature of the \textbf{BI} stream is that the data wil be bundled in pieces potentially as large as coveing
+a SPS cycle which is in tens of seconds. It can be assume that the data in all three streams will be tagged
+with time stamps derived from the same source which is crucial for matching of these date in every step
+of processing.
 
 \subsection{Goals}
 \label{sec:outline}
@@ -60,7 +81,7 @@ operators.
 This is a compressed summary of information presented in \cite{docdb1811}.
 For more detailed explanation please see the source.
 
-\subsubsection{Data Processing}
+\subsubsection{TPC Data Processing}
 \label{sec:categories}
 The categories are as follows:
 
@@ -104,7 +125,7 @@ while still preserving modularity to the largest extent possible. Such design de
 Note that the categories listed above can be thought of as stages of processing (for the most part), where
 the output of a stage serves as input to the next one. This can be conceptualized as a DAG (see \ref{sec:dag}).
 
-\subsubsection{Sampling (pre-scaling) the Data in the Prompt Processing Chain}
+\subsubsection{Sampling (pre-scaling) the TPC Data in the Prompt Processing Chain}
 \label{sec:downsampling}
 The categories of processing as outlined above may have drastically different resource requirements.
 %i.e. the ability to select a fractional sample of the data stream as is progresses through the chain, at every stage.
@@ -151,7 +172,7 @@ It may include items such as:
 
 \end{itemize}
 
-\subsubsection{Other Applications of the Data Processing Components}
+\subsubsection{Other Applications of the TPC Data Processing Components}
 Results of the intermediate stages of Data Processing may need to be preserved, for
 example the data in graphic form for audit/run documentation purposes.
 Also, there could be a potential for large processing efficiency
@@ -160,9 +181,20 @@ Certain portion of log files produced during prompt processing may contain infor
 for future reference and debugging, so provisions will be made to capture these data.
 
 
+\subsubsection{Other Data Processing}
+\label{sec:otherdata}
+Prompt processing will also need to include the data produced by the \textbf{BI} and \textbf{CRT}
+systems (see \ref{sec:streams}). At a minimum this will include collection and plotting of the
+ADC spectra which will allow the operator to ascertain the beam status and performance
+and make sure the trigger is configured correctly (for both the beam and the cosmic tay trigger).
+In addition, there can be a stage that reconstructs the beam particle trajectories based on
+position-sensitive  detectors which are part of \textbf{BI}.
+
+
+
 \section{Prompt Processing as a DAG}
 \label{sec:dag}
-Data and processes involved in prompt processing as outlined in \ref{sec:outline} can be
+Data and processes involved in prompt processing as outlined in \ref{sec:outline} (for LArTPC) can be
 modeled together as a DAG. This is illustrated in Fig.\ref{fig:dag1}
 in the form of a high-level conceptual diagram.
 
@@ -172,12 +204,15 @@ in the form of a high-level conceptual diagram.
   \caption{An example of DAG representing prompt processing in \expname.}
   \label{fig:dag1}
 \end{figure}
-In this diagram, oval shapes represent data, rectangular blocks correspond to
+\noindent In this diagram, oval shapes represent data, rectangular blocks correspond to
 elements of workload responsible for processing the data and diamonds stand for processes
 which create``visual products'' (see \ref{sec:outline} and \ref{sec:viz_intro}).
 The \textbf{ADC} and \textbf{FFT} components are conflated here for the following reason - while being functionally
 different, both depend on data being decompressed. Since it makes sense to do decompression only once, it may
 be optimal to combine these two steps in a single unit of execution.
+
+Processing for the \textbf{BI} and \textbf{CRT} data streams (see \ref{sec:streams}) will be different but will
+follow the same general logic.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -212,8 +247,12 @@ and EOS is the preferred storage system.
 This has consequences for the optimal location of the computing resources i.e. the worker nodes
 committed to the system -- they need to be in the network proximity of EOS and not put extra
 load on the network link between \expname and the CERN central services. In practice this means
-that the prompto processing system needs to be located on the CERN main campus (the West Area)
+that the prompt processing system needs to be located on the CERN main campus (the West Area)
 as opposed to Prevessin (the North Area).
+
+This argument is bolsered by the fact that EOS will also be the first common point for the data coming
+in three streams (\ref{sec:streams}): LArTPC, \textbf{BI} and \textbf{CRT}. The information contained
+in the two latter streams will be absolutely necessary for the prompt processing to be meaningful.
 
 
 \subsection{Prioritization of Processing Steps}
