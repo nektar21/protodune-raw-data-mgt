@@ -21,13 +21,14 @@
 \maketitle
 
 \begin{abstract}
-\noindent  This note describes design parameters of
-the Prompt Processing system in the Single-Phase \pd
-(CERN experiment \expname), and one particular design option for such system
-based on prioritized queue. We start with a brief summary of the data characteristics and data handling patterns
-as documented in DocDB\,1086 \cite{docdb1086}, DocDB\,1212 \cite{docdb1212} and present
-the basic requirements as per  DocDB 1811 \cite{docdb1811}. A design is proposed which satisfies 
-these requirements.
+\noindent  
+Operating a typical High Energy Physics (HEP)  detector in real experimental conditions and for an extended period will allow for a full characterization of many components. One of these items among the many steps leading from the raw data collected
+by the detector to physics results, is the Prompt Processing (PS) and Data Quality Monitoring (DQM). This note describes design parameters of
+the PS and DQM system in the Single-Phase \pd (CERN experiment \expname), and one particular design option for such system
+based on prioritized queue. We start with a brief summary of the data characteristics and data handling patterns as documented in DocDB\,1086 \cite{docdb1086}, DocDB\,1212 \cite{docdb1212} and present the basic requirements as per  DocDB,\ 1811 \cite{docdb1811}. 
+To cope with these challenges the performance and reliability of the \expname reconstruction software has to be performed in such a way that the prompt data reconstruction system quickly and stably provides high quality data to analysers. 
+In this paper we outline how this could be achieved, looking at which data streams are recorded and in what formats, the infrastructure and setup of the \expname  computing farm and possibly, improvements in the software and computing infrastructure to ensure smooth running and good performance.
+%A design is proposed which satisfies these requirements.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,38 +37,15 @@ these requirements.
 \subsection{Data Scenarios and Data Handling}
 \label{sec:rawdata}
 Quantitative information about scenarios for data taking in \pd is collected and maintained in \cite{docdb1086}. The following parameters
-are assumed at the time of writing: the raw data rate
-produced by the LArTPC will be $\sim$1.4\,GB/s after lossless compression, and to size up
-the system and account for contingencies rates up to 3\,GB/s are under consideration.
-Rates and volume of data coming from other detector components will be much smaller
-and won't effect the overall scale of the data handling and processing system.
+are assumed at the time of writing: the raw data rate will 1.4\,GB/s after lossless compression, and to size up the system and account for contingencies rates up to 3\,GB/s are under consideration.
 
 Outline of the design of the raw data handling system is documented in  \cite{docdb1212} and other prior \pd documentation.
-According to it, the data is transmitted from the online buffer to the CERN EOS via a 20 Gbps full-duplex network connection.
-The EOS system serves as the hub and staging area for the \pd raw data from which
-it gets committed to the tape archive at CERN and also transmitted to FNAL and potentially
-other US and international locations. All or most links in the data transmission chain will be based on F-FTS.
-
-\subsection{Data Streams}
-\label{sec:streams}
-
-For reasons that are outside of the scope of this paper the experimental raw data in \expname will come
-as three distinct streams at the time they are captured:
-\begin{itemize}
-\item The LArTPC stream which is the dominant in terms of rate and volume
-\item \textbf{BI} (Beam Instrumentation) Stream containing data from Cherenkov and TOF systems
-\item \textbf{CRT} (Cosmic Ray Tagger)
-\end{itemize}
-
-\noindent All three streams will follow a similar path in that they will be transmitted from their respective
-online buffers to mass storage (which in this case is EOS, see \ref{sec:staging}). An important differentiating
-frature of the \textbf{BI} stream is that the data wil be bundled in pieces potentially as large as coveing
-a SPS cycle which is in tens of seconds. It can be assume that the data in all three streams will be tagged
-with time stamps derived from the same source which is crucial for matching of these date in every step
-of processing.
-
+According to it, the data is transmitted from the online buffer to the CERN EOS \cite{eos} via a 20 Gbps full-duplex network connection.
+The EOS system serves as the hub and staging area for the \pd raw data from which it gets committed to the tape archive at CERN and also transmitted to FNAL and potentially other US and international locations. All or most links in the data transmission chain will be based on the  Fermilab File Transfer System (F-FTS) \cite{fts}
+ 
 \subsection{Goals}
 \label{sec:outline}
+
 According to \cite{docdb1811}  prompt processing needs to occur on the scale
 of tens of minutes (or better) from the time the data was taken. Its purpose is to
 provide a more in-depth data QA and assessment of the detector's health and operating conditions
@@ -76,12 +54,11 @@ done as a part of prompt processing will result in some sort of a ``visual produ
 plot, event display or a summary table in order to provide optimal accessibility to the experiment
 operators.
 
-
 \subsection{Scope of the Prompt Processing}
 This is a compressed summary of information presented in \cite{docdb1811}.
 For more detailed explanation please see the source.
 
-\subsubsection{TPC Data Processing}
+\subsubsection{Data Processing}
 \label{sec:categories}
 The categories are as follows:
 
@@ -89,8 +66,7 @@ The categories are as follows:
 
 \item[DAQ] A summary of DAQ-level data (with no decompression) such as summaries of data
  rates  or summaries of any metadata, status codes the provided by the DAQ etc.
-This processing is a candidate for running directly within artDAQ
-monitor processes instead of prompt-processing and is included here
+This processing is a candidate for running directly within artDAQ monitor processes instead of prompt processing and is included here
 for completeness.
 
 \item[ADC] A summary of ADC-level data e.g. mean/RMS (requires data decompression).
@@ -125,7 +101,7 @@ while still preserving modularity to the largest extent possible. Such design de
 Note that the categories listed above can be thought of as stages of processing (for the most part), where
 the output of a stage serves as input to the next one. This can be conceptualized as a DAG (see \ref{sec:dag}).
 
-\subsubsection{Sampling (pre-scaling) the TPC Data in the Prompt Processing Chain}
+\subsubsection{Sampling (pre-scaling) the Data in the Prompt Processing Chain}
 \label{sec:downsampling}
 The categories of processing as outlined above may have drastically different resource requirements.
 %i.e. the ability to select a fractional sample of the data stream as is progresses through the chain, at every stage.
@@ -148,9 +124,50 @@ This can be achieved by two methods or some combination thereof:
 
 \noindent Parameters governing this fractional data selection must be dynamically configurable.
 
+\subsubsection{The Neutrino Platform Computing Farm}
+\label{sec:nptier0}
+
+Within the \expname hierarchical multi-computing infrastructure, the most important role of the first level, the \expname computing cluster, is accepting the raw data from the EOS online system and ensuring it is archived to tape, merging small files to a size that is appropriate for the tape system. The other main responsibilities of the computing cluster are the prompt processing of the raw data for support of calibration and wire alignment, the prompt first-pass processing of the raw data after calibration and alignment being done, archival of the
+derived data and registration of new data with the \expname Distributed Data Management (DDM) system and
+other catalogues, and preparation of data for export to other copmputing centers world-wide. The data flow of the above system is summarised in the figure 1. 
+
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.75\textwidth]{figures/np04tzero.png}
+  \caption{NP-CERN computing infrastructure for prompt processing.}
+  \label{fig:npcomptzero}
+\end{figure}
+
+The system has an overall I/O capacity of 20 GB/s including the internal accesses as well as the import from the online system and the export to other computing centres. The NP computing infrastructure system (which interacts with external systems like DDM, CERN mass storage system (CASTOR), and  CERN/Cluster batch system (based on LSF and Condor))  is a critical part in the data processing chain and must operate in continuous 24/7 real-time mode with a high resilience to failures.
+
+The \expname computing farm will have a sophisticated web based monitoring system that allows shifters to spot and isolate any problems in prompt processing (and/or physics reconstruction) rapidly and then take appropriate actions. e.g. 
+
+If there are red areas on the monitor, the task lister will allow the logs for problematic jobs to be examined in detail so that bug reports can be sent to the appropriate support unit (computing infrastructure, operations and offline software team).
+
+Infrastructure problems can usually be resolved relatively quickly and the \expname software setup allows for patches to the offline software to be quickly deployed to address any bugs.
+
+\paragraph{The Neutrino Platform Computing Farm Monitoring system}
+The monitoring system could be based on the ARDA Dashboard web server (an extension of Apache server written in Python) \cite{arda}, which connects directly to the Tier-0 database to retrieve real-time performance data, which are then served to the client usually in JSON format \cite{json}.
+The thick client is responsible both for processing and visualization of received data. It is built using Web technologies to achieve a high level of user interactivity. Data are periodically updated through asynchronous JavaScript calls (XMLHttpRequest) \cite{XMLHttpRequest} and each element of the page is updated individually so that the whole page does not need to be refreshed and user settings are thus preserved.  
 
 \subsubsection{Visualization}
 \label{sec:viz_intro}
+
+The prompt processing of the \expname is essential for monitoring the detector data and status so to discover at early stages hardware problems and insure high efficiency in the detector operation. We plan to monitor low and high level quantities in reconstructed data and ensure their quality certification. It is also used for systematic validation of simulation and reconstruction software. 
+
+The \expname prompt processing framework must be embedded in the more general \expname software and must support histogram booking, filling, handling and archiving and it will be provided with a standardized interface for algorithms which perform automated quality tests. 
+
+The results can be visualized on a web-based graphical user interface (GUI) which guarantees authenticated worldwide access.
+Fig.\ref{fig:p3sgui} 
+
+\begin{figure}[tbh]
+  \centering
+  \includegraphics[width=0.75\textwidth]{figures/p3s_dqm_gui_np04.pdf}
+  \caption{he data quality and prompt processing Graphical User Interface is web-based and guarantees authenticated worldwide access.}
+  \label{fig:p3sgui}
+\end{figure}
+
+The data quality monitoring system has to accommodate the increasing needs of the \expname running during Run period. In order to cope with the increased CPU time needs expected for the run period, the data quality monitoring system could be integrated to a multi-core multi-thread processing. Furthermore new functionalities could be deployed, such as the possibility of comparing histograms from data and simulated samples to monitor constantly the data-to-simulation level of agreement, well before reaching the actual offline analysis level where this operation normally takes place.
 
 The \textit{Visualization} category of processing
  may take data output from any of the above listed stages in
@@ -172,31 +189,14 @@ It may include items such as:
 
 \end{itemize}
 
-\subsubsection{Other Applications of the TPC Data Processing Components}
-Results of the intermediate stages of Data Processing may need to be preserved, for
-example the data in graphic form for audit/run documentation purposes.
+\subsubsection{Other Applications of the Data Processing Components}
+Results of the intermediate stages of Data Processing may need to be preserved, for example the data in graphic form for audit/run documentation purposes.
 Also, there could be a potential for large processing efficiency
-gains to be made if the entire data can be run through the \textit{Sig} processing followed by ZS.
-Certain portion of log files produced during prompt processing may contain information useful
-for future reference and debugging, so provisions will be made to capture these data.
-
-
-\subsubsection{Other Data Processing}
-\label{sec:otherdata}
-Prompt processing will also need to include the data produced by the \textbf{BI} and \textbf{CRT}
-systems (see \ref{sec:streams}). At a minimum this will include collection and plotting of the
-ADC spectra which will allow the operator to ascertain the beam status and performance
-and make sure the trigger is configured correctly (for both the beam and the cosmic tay trigger).
-In addition, there can be a stage that reconstructs the beam particle trajectories based on
-position-sensitive  detectors which are part of \textbf{BI}.
-
-
+gains to be made if the entire data can be run through the \textit{Sig} processing followed by ZS. Certain portion of log files produced during prompt processing may contain information useful for future reference and debugging, so provisions will be made to capture these data.
 
 \section{Prompt Processing as a DAG}
 \label{sec:dag}
-Data and processes involved in prompt processing as outlined in \ref{sec:outline} (for LArTPC) can be
-modeled together as a DAG. This is illustrated in Fig.\ref{fig:dag1}
-in the form of a high-level conceptual diagram.
+Data and processes involved in prompt processing as outlined in \ref{sec:outline} can be modeled together as a DAG. This is illustrated in Fig.\ref{fig:dag1} in the form of a high-level conceptual diagram.
 
 \begin{figure}[tbh]
   \centering
@@ -204,15 +204,12 @@ in the form of a high-level conceptual diagram.
   \caption{An example of DAG representing prompt processing in \expname.}
   \label{fig:dag1}
 \end{figure}
-\noindent In this diagram, oval shapes represent data, rectangular blocks correspond to
+In this diagram, oval shapes represent data, rectangular blocks correspond to
 elements of workload responsible for processing the data and diamonds stand for processes
 which create``visual products'' (see \ref{sec:outline} and \ref{sec:viz_intro}).
 The \textbf{ADC} and \textbf{FFT} components are conflated here for the following reason - while being functionally
 different, both depend on data being decompressed. Since it makes sense to do decompression only once, it may
 be optimal to combine these two steps in a single unit of execution.
-
-Processing for the \textbf{BI} and \textbf{CRT} data streams (see \ref{sec:streams}) will be different but will
-follow the same general logic.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -247,12 +244,8 @@ and EOS is the preferred storage system.
 This has consequences for the optimal location of the computing resources i.e. the worker nodes
 committed to the system -- they need to be in the network proximity of EOS and not put extra
 load on the network link between \expname and the CERN central services. In practice this means
-that the prompt processing system needs to be located on the CERN main campus (the West Area)
+that the prompto processing system needs to be located on the CERN main campus (the West Area)
 as opposed to Prevessin (the North Area).
-
-This argument is bolsered by the fact that EOS will also be the first common point for the data coming
-in three streams (\ref{sec:streams}): LArTPC, \textbf{BI} and \textbf{CRT}. The information contained
-in the two latter streams will be absolutely necessary for the prompt processing to be meaningful.
 
 
 \subsection{Prioritization of Processing Steps}
@@ -358,8 +351,7 @@ the quickest turnaround time possible given the resources available.
 failing due to the timeout conditions will be logged and triaged separately.
 
 \item A database will be used to marshal data to jobs, to keep and account for the states
-of jobs in various stages of processing (including errors and failures),
-and to monitor the progress of execution.
+of jobs in various stages of processing (including errors and failures), and to monitor the progress of execution.
 
 \end{itemize}
 
@@ -531,7 +523,26 @@ for record keeping.
 {DUNE DocDB 1811: \textit{Prompt Processing System Requirements for the Single-Phase protoDUNE}}\\
 \url{http://docs.dunescience.org:8080/cgi-bin/ShowDocument?docid=1811}
 
+\bibitem{eos}
+{The CERN Exabyte Scale Storage}\\
+\url{http://information-technology.web.cern.ch/services/eos-service}
 
+\bibitem{fts}
+{The Fermilab File Transfer System}\\
+\url{http://cd-docdb.fnal.gov/cgi-bin/RetrieveFile?docid=5412&filename=datamanagement-changeprocedures.pdf&version=1}
+
+\bibitem{arda}
+{The CERN Dashboard project}\\
+CERN-IT-NOTE-2007-048) and \url{http://dashboard.cern.ch/}
+
+\bibitem{json} 
+{JSON} \\
+\url{http://www.json.org/}
+   
+\bibitem{XMLHttpRequest} 
+{XMLHttpRequest} \\
+\url{http://www.w3.org/TR/XMLHttpRequest/ }
+    
 \bibitem{xrootd}
 {XRootD}\\
 \url{http://www.xrootd.org}
